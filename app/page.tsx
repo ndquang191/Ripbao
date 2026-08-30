@@ -4,6 +4,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { AccountLink } from "@/components/account-link";
+import { CartLink } from "@/components/cart-link";
 
 const sellers = [
   { username: "bao.collects", initials: "BC", cards: 211, rare: 28, color: "bg-[#8e5969]", featured: true },
@@ -58,7 +60,7 @@ export default function Home() {
             <Input className="h-11 bg-card/95 pr-23 pl-10 shadow-sm" placeholder="Tìm card, set hoặc người bán..." aria-label="Tìm kiếm" />
             <Button size="sm" className="absolute top-1.5 right-1.5 h-8">Tìm</Button>
           </div>
-          <Link href="/login" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "justify-self-end")}>Đăng nhập</Link>
+          <div className="flex justify-self-end gap-2"><CartLink /><AccountLink /></div>
         </div>
 
         <section className="grid flex-1 items-center gap-8 py-5 lg:grid-cols-[1.05fr_.95fr] lg:gap-14 lg:py-2">
