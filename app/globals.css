@@ -25,6 +25,7 @@
 
 @layer base {
   * { @apply border-border outline-ring/50; }
+  html { scrollbar-gutter: stable; }
   body { @apply bg-background text-foreground antialiased; }
   button, a { -webkit-tap-highlight-color: transparent; }
 }
@@ -34,12 +35,50 @@
   background-size: 42px 42px;
 }
 
+.collection-editor input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.collection-editor input[type="number"]::-webkit-inner-spin-button,
+.collection-editor input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.collection-scrollbar {
+  scrollbar-color: rgb(91 112 92 / 0.55) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.collection-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.collection-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.collection-scrollbar::-webkit-scrollbar-thumb {
+  border: 2px solid var(--card);
+  border-radius: 999px;
+  background: rgb(91 112 92 / 0.5);
+}
+
+.collection-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(54 79 59 / 0.72);
+}
+
+.collection-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 @media (max-height: 680px) {
   .login-panel .login-back { margin-bottom: 0.75rem; }
   .login-card-content { padding: 1rem 1.25rem; }
   .login-panel .login-brand { margin-bottom: 0.75rem; }
-  .login-panel .login-heading { margin-bottom: 0.75rem; }
-  .login-panel .login-heading p:last-child { margin-top: 0.25rem; }
   .login-panel .login-form { gap: 0.625rem; }
   .login-panel .login-form > div { gap: 0.25rem; }
   .login-panel .login-form input,

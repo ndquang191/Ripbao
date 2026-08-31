@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { sessionKey } from "@/components/account-link";
+import { getStoredProfile, sessionKey } from "@/components/account-link";
 
 const demoAccount = {
   username: "bao.collects",
@@ -26,7 +26,8 @@ export default function LoginPage() {
     const username = String(form.get("username") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
-    if (username !== demoAccount.username || password !== demoAccount.password) {
+    const savedPassword = getStoredProfile(username)?.password;
+    if (username !== demoAccount.username || password !== (savedPassword ?? demoAccount.password)) {
       setError("Username hoặc password chưa đúng.");
       return;
     }
@@ -36,7 +37,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="paper-grid relative grid h-dvh place-items-center overflow-x-hidden overflow-y-auto px-5 py-4 sm:py-6">
+    <main className="paper-grid relative grid h-[100vh] place-items-center overflow-hidden px-5 py-4 sm:py-6">
       <div className="pointer-events-none absolute -top-28 -right-24 size-80 rounded-full bg-accent/25 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-32 -left-20 size-96 rounded-full bg-[#cadde2]/45 blur-3xl" />
 
@@ -59,16 +60,6 @@ export default function LoginPage() {
               </span>
               RIPBAO
             </Link>
-
-            <div className="login-heading mb-5 sm:mb-6">
-              <p className="mb-2 text-[10px] font-extrabold tracking-[0.18em] text-[#6d873f] uppercase">
-                Chào mừng trở lại
-              </p>
-              <h1 className="font-serif text-3xl font-bold tracking-[-0.03em]">Đăng nhập</h1>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                Quản lý bộ sưu tập Riftbound của bạn.
-              </p>
-            </div>
 
             <form className="login-form space-y-4" onSubmit={handleSubmit} onChange={() => error && setError("")}>
               <div className="space-y-2">

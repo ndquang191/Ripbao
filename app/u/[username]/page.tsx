@@ -1,18 +1,15 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Collection, type CollectionCard } from "./collection";
-import { cn } from "@/lib/utils";
 import { AccountLink } from "@/components/account-link";
-import { getAllRiftboundCards, type RiftboundCard } from "@/lib/riftbound";
+import { getAllCards, type RiftboundCard } from "@/lib/riftbound";
 import { TradingLocations } from "./trading-locations";
-import { CartLink } from "@/components/cart-link";
+import { formatCurrency } from "@/lib/currency";
 
 const fallbackCards: CollectionCard[] = [
-  { id: "jinx-rebel", name: "Jinx, Rebel", set: "Origins", number: "181/221", rarity: "Epic", type: "Champion", faction: "Chaos", finish: "Foil", condition: "Near Mint", price: "$42.80", quantity: 1, glyph: "✦", gradient: "from-[#b82e96] via-[#663876] to-[#202656]" },
-  { id: "ahri-nine-tailed", name: "Ahri, Nine-Tailed", set: "Origins", number: "042/221", rarity: "Rare", type: "Legend", faction: "Calm", finish: "No Foil", condition: "Near Mint", price: "$18.20", quantity: 2, glyph: "◈", gradient: "from-[#eeaaaf] via-[#a35d84] to-[#532c72]" },
-  { id: "yasuo-unforgiven", name: "Yasuo, Unforgiven", set: "Origins", number: "096/221", rarity: "Epic", type: "Champion", faction: "Calm", finish: "No Foil", condition: "Excellent", price: "$31.50", quantity: 1, glyph: "◇", gradient: "from-[#92c5d7] via-[#4e7c8f] to-[#264958]" },
-  { id: "teemo-scout", name: "Teemo, Scout", set: "Origins", number: "117/221", rarity: "Rare", type: "Battlefield", faction: "Body", finish: "Foil", condition: "Near Mint", price: "$14.90", quantity: 3, glyph: "❋", gradient: "from-[#b7d481] via-[#6b9658] to-[#395f37]" },
+  { id: "jinx-rebel", name: "Jinx, Rebel", set: "Origins", number: "181/221", rarity: "Epic", type: "Champion", faction: "Chaos", finish: "Foil", condition: "Near Mint", price: formatCurrency(1_070_000), quantity: 1, glyph: "✦", gradient: "from-[#b82e96] via-[#663876] to-[#202656]" },
+  { id: "ahri-nine-tailed", name: "Ahri, Nine-Tailed", set: "Origins", number: "042/221", rarity: "Rare", type: "Legend", faction: "Calm", finish: "No Foil", condition: "Near Mint", price: formatCurrency(455_000), quantity: 2, glyph: "◈", gradient: "from-[#eeaaaf] via-[#a35d84] to-[#532c72]" },
+  { id: "yasuo-unforgiven", name: "Yasuo, Unforgiven", set: "Origins", number: "096/221", rarity: "Epic", type: "Champion", faction: "Calm", finish: "No Foil", condition: "Excellent", price: formatCurrency(788_000), quantity: 1, glyph: "◇", gradient: "from-[#92c5d7] via-[#4e7c8f] to-[#264958]" },
 ];
 
 function toCollectionCard(card: RiftboundCard): CollectionCard {
@@ -20,27 +17,41 @@ function toCollectionCard(card: RiftboundCard): CollectionCard {
     id: card.id,
     name: card.name,
     set: card.set,
-    number: String(card.collectorNumber),
+    number: String(card.collectorNumber).padStart(3, "0"),
     rarity: card.rarity,
     type: card.type,
-    faction: card.faction,
+    faction: card.domain[0] ?? "",
+    domains: card.domain,
+    supertype: card.supertype,
+    isNew: card.isNew,
     finish: "No Foil",
     condition: "Chưa cập nhật",
     price: "Liên hệ",
     quantity: 1,
     glyph: "R",
     gradient: "from-[#91c6bd] via-[#477a78] to-[#283d54]",
-    imageUrl: card.art.thumbnailURL || card.art.fullURL,
+    imageUrl: card.imageUrl,
   };
 }
 
 async function loadCards() {
   try {
-    const result = await getAllRiftboundCards();
-    return { cards: result.cards.map(toCollectionCard), usingFallback: false };
+    const cards = await getAllCards();
+    return { cards: uniqueCardsByName(cards.map(toCollectionCard)), usingFallback: false };
   } catch {
     return { cards: fallbackCards, usingFallback: true };
   }
+}
+
+function uniqueCardsByName(cards: CollectionCard[]) {
+  const names = new Set<string>();
+
+  return cards.filter((card) => {
+    const name = card.name.trim().toLocaleLowerCase("en");
+    if (names.has(name)) return false;
+    names.add(name);
+    return true;
+  }).sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
 }
 
 function Logo() {
@@ -70,8 +81,6 @@ async function SellerView({ username, forceViewer = false }: { username: string;
         <div className="flex items-center justify-between border-b pb-5">
           <Link href="/" className="flex items-center gap-3 text-sm font-extrabold tracking-[0.16em]"><Logo /> RIPBAO</Link>
           <div className="flex items-center gap-2">
-            <Link href="/" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden sm:inline-flex")}><ArrowLeft className="size-3.5" /> Trang chủ</Link>
-            <CartLink />
             <AccountLink />
           </div>
         </div>

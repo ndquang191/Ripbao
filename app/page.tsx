@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { AccountLink } from "@/components/account-link";
-import { CartLink } from "@/components/cart-link";
+import { formatCurrency } from "@/lib/currency";
 
 const sellers = [
   { username: "bao.collects", initials: "BC", cards: 211, rare: 28, color: "bg-[#8e5969]", featured: true },
@@ -37,7 +37,7 @@ function CardArtwork() {
         </div>
       </div>
       <Card className="absolute right-0 bottom-12 z-20 min-w-40 border-l-[3px] border-l-accent shadow-xl">
-        <CardContent className="relative p-3.5"><span className="block text-[8px] font-bold tracking-wider text-muted-foreground uppercase">Market price</span><strong className="mt-0.5 block font-serif text-2xl">$42.80</strong><b className="absolute right-3 bottom-4 text-[9px] text-[#65982e]">↗ 12.4%</b></CardContent>
+        <CardContent className="relative p-3.5"><span className="block text-[8px] font-bold tracking-wider text-muted-foreground uppercase">Market price</span><strong className="mt-0.5 block font-serif text-2xl">{formatCurrency(1_070_000)}</strong><b className="absolute right-3 bottom-4 text-[9px] text-[#65982e]">↗ 12.4%</b></CardContent>
       </Card>
       <span className="absolute top-16 right-0 text-3xl text-[#90a967]">✦</span><span className="absolute bottom-8 left-14 text-xl text-[#90a967]">✧</span>
     </div>
@@ -60,7 +60,7 @@ export default function Home() {
             <Input className="h-11 bg-card/95 pr-23 pl-10 shadow-sm" placeholder="Tìm card, set hoặc người bán..." aria-label="Tìm kiếm" />
             <Button size="sm" className="absolute top-1.5 right-1.5 h-8">Tìm</Button>
           </div>
-          <div className="flex justify-self-end gap-2"><CartLink /><AccountLink /></div>
+          <div className="flex justify-self-end gap-2"><AccountLink /></div>
         </div>
 
         <section className="grid flex-1 items-center gap-8 py-5 lg:grid-cols-[1.05fr_.95fr] lg:gap-14 lg:py-2">
