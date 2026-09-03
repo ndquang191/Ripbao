@@ -1,10 +1,15 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Collection, type CollectionCard } from "./collection";
 import { AccountLink } from "@/components/account-link";
-import { getAllCards, type RiftboundCard } from "@/lib/riftbound";
 import { TradingLocations } from "./trading-locations";
 import { formatCurrency } from "@/lib/currency";
+import { getDb } from "@/lib/db";
+import { cn } from "@/lib/utils";
+import { getCurrentUser } from "@/lib/auth";
+import { UserRound } from "lucide-react";
+import { PageTitle } from "@/components/page-title";
+import { notFound, redirect } from "next/navigation";
 
 const fallbackCards: CollectionCard[] = [
   { id: "jinx-rebel", name: "Jinx, Rebel", set: "Origins", number: "181/221", rarity: "Epic", type: "Champion", faction: "Chaos", finish: "Foil", condition: "Near Mint", price: formatCurrency(1_070_000), quantity: 1, glyph: "✦", gradient: "from-[#b82e96] via-[#663876] to-[#202656]" },
@@ -12,46 +17,34 @@ const fallbackCards: CollectionCard[] = [
   { id: "yasuo-unforgiven", name: "Yasuo, Unforgiven", set: "Origins", number: "096/221", rarity: "Epic", type: "Champion", faction: "Calm", finish: "No Foil", condition: "Excellent", price: formatCurrency(788_000), quantity: 1, glyph: "◇", gradient: "from-[#92c5d7] via-[#4e7c8f] to-[#264958]" },
 ];
 
-function toCollectionCard(card: RiftboundCard): CollectionCard {
-  return {
-    id: card.id,
-    name: card.name,
-    set: card.set,
-    number: String(card.collectorNumber).padStart(3, "0"),
-    rarity: card.rarity,
-    type: card.type,
-    faction: card.domain[0] ?? "",
-    domains: card.domain,
-    supertype: card.supertype,
-    isNew: card.isNew,
-    finish: "No Foil",
-    condition: "Chưa cập nhật",
-    price: "Liên hệ",
-    quantity: 1,
-    glyph: "R",
-    gradient: "from-[#91c6bd] via-[#477a78] to-[#283d54]",
-    imageUrl: card.imageUrl,
-  };
-}
+async function loadSeller(username: string) {
+  const sql = getDb();
+  const users = await sql`
+    SELECT username, facebook_url AS "facebookUrl"
+    FROM users
+    WHERE username = ${username.toLowerCase()}
+    LIMIT 1
+  `;
+  if (!users[0]) return null;
 
-async function loadCards() {
-  try {
-    const cards = await getAllCards();
-    return { cards: uniqueCardsByName(cards.map(toCollectionCard)), usingFallback: false };
-  } catch {
-    return { cards: fallbackCards, usingFallback: true };
+  const rows = await sql`
+      SELECT cards.id, cards.name, cards.set_name AS "set", cards.collector_number AS number,
+        cards.rarity, cards.type, cards.domains, cards.supertype, cards.image_url AS "imageUrl",
+        listings.finish, listings.condition, listings.quantity, listings.min_price_vnd AS "minPrice"
+      FROM listings
+      JOIN users ON users.id = listings.user_id
+      JOIN cards ON cards.id = listings.card_id
+      WHERE users.username = ${username.toLowerCase()} AND listings.is_active AND listings.quantity > 0
+      ORDER BY cards.name
+  `;
+  const cards: CollectionCard[] = rows.map((row) => ({ id: String(row.id), name: String(row.name), set: String(row.set), number: String(row.number).padStart(3, "0"), rarity: String(row.rarity), type: String(row.type), faction: (row.domains as string[])[0] ?? "", domains: row.domains as string[], supertype: row.supertype == null ? null : String(row.supertype), finish: row.finish === "foil" ? "Foil" : "No Foil", condition: String(row.condition), price: Number(row.minPrice) > 0 ? formatCurrency(Number(row.minPrice)) : "Liên hệ", quantity: Number(row.quantity), glyph: "R", gradient: "from-[#91c6bd] via-[#477a78] to-[#283d54]", imageUrl: String(row.imageUrl) }));
+  const value = users[0].facebookUrl;
+  let facebookUrl: string | null = null;
+  if (value) {
+    const url = new URL(String(value));
+    if (url.protocol === "https:" || url.protocol === "http:") facebookUrl = url.toString();
   }
-}
-
-function uniqueCardsByName(cards: CollectionCard[]) {
-  const names = new Set<string>();
-
-  return cards.filter((card) => {
-    const name = card.name.trim().toLocaleLowerCase("en");
-    if (names.has(name)) return false;
-    names.add(name);
-    return true;
-  }).sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+  return { cards, facebookUrl };
 }
 
 function Logo() {
@@ -71,9 +64,19 @@ export default async function SellerPage({ params }: { params: Promise<{ usernam
   return <SellerView username={username} />;
 }
 
-async function SellerView({ username, forceViewer = false }: { username: string; forceViewer?: boolean }) {
-  const displayUsername = decodeURIComponent(username);
-  const { cards, usingFallback } = await loadCards();
+export async function SellerView({ username, forceViewer = false, demo = false }: { username: string; forceViewer?: boolean; demo?: boolean }) {
+  let displayUsername: string;
+  try { displayUsername = decodeURIComponent(username); } catch { notFound(); }
+  let seller: Awaited<ReturnType<typeof loadSeller>>;
+  let viewer: Awaited<ReturnType<typeof getCurrentUser>>;
+  try {
+    [seller, viewer] = await Promise.all([demo ? Promise.resolve({ cards: fallbackCards, facebookUrl: null }) : loadSeller(displayUsername), getCurrentUser()]);
+  } catch {
+    redirect("/error");
+  }
+  if (!seller) notFound();
+  const { cards, facebookUrl } = seller;
+  const isOwner = !forceViewer && viewer?.username === displayUsername.toLowerCase();
 
   return (
     <main className="paper-grid min-h-dvh">
@@ -88,8 +91,8 @@ async function SellerView({ username, forceViewer = false }: { username: string;
         <section className="border-b py-7">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-serif text-3xl font-semibold tracking-tight">@{displayUsername}</h1>
-              <Button variant="outline" size="icon" className="size-8" aria-label="Nhắn tin qua Facebook" title="Nhắn tin qua Facebook"><FacebookIcon /></Button>
+              <PageTitle icon={UserRound}>@{displayUsername}</PageTitle>
+              {facebookUrl && <a href={facebookUrl} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline", size: "icon" }), "size-8")} aria-label={`Mở Facebook của @${displayUsername}`} title="Mở Facebook"><FacebookIcon /></a>}
               <span className="rounded-sm bg-accent px-2 py-1 text-[9px] font-extrabold tracking-wider text-accent-foreground uppercase">Đang bán</span>
             </div>
           </div>
@@ -99,8 +102,7 @@ async function SellerView({ username, forceViewer = false }: { username: string;
         </section>
 
         <section className="py-6">
-          {usingFallback && <p className="mb-3 rounded-sm border border-amber-300 bg-amber-50 px-3 py-2 text-[10px] text-amber-900">Đang hiển thị dữ liệu mẫu vì Riftbound API chưa được cấu hình hoặc tạm thời không khả dụng.</p>}
-          <Collection cards={cards} username={displayUsername} />
+          <Collection cards={cards} username={displayUsername} facebookUrl={facebookUrl} isOwner={isOwner} />
         </section>
       </div>
     </main>

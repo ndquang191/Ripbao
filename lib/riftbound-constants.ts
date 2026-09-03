@@ -8,12 +8,12 @@ export const RIFTBOUND_DOMAINS = [
 ] as const;
 
 export const RIFTBOUND_DOMAIN_COLORS: Record<(typeof RIFTBOUND_DOMAINS)[number], string> = {
-  Body: "#ea580c",
-  Calm: "#65a30d",
-  Chaos: "#9333ea",
-  Fury: "#dc2626",
-  Mind: "#2563eb",
-  Order: "#eab308",
+  Body: "#c2410c",
+  Calm: "#4d7c0f",
+  Chaos: "#7e22ce",
+  Fury: "#b91c1c",
+  Mind: "#1d4ed8",
+  Order: "#ca8a04",
 };
 
 export const RIFTBOUND_CARD_TYPES = [

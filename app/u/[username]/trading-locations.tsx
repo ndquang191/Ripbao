@@ -2,20 +2,15 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Check, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
-import { sessionKey } from "@/components/account-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCart } from "@/components/cart-provider";
 import { cn } from "@/lib/utils";
 
 type TradingLocation = { id: string; name: string; detail: string };
 type TradeOptionId = "nexus-night" | "skirmish" | "ship-inner-city" | "ship-nationwide";
-type LegacyLocation = TradingLocation & { kind?: "meetup" | "event" };
-
-const sampleLocations: TradingLocation[] = [
-  { id: "district-1", name: "Quận 1", detail: "TP.HCM · Hẹn địa chỉ cụ thể qua tin nhắn" },
-  { id: "district-3", name: "Quận 3", detail: "TP.HCM · Sau 18:00 các ngày trong tuần" },
-  { id: "thu-duc", name: "Thủ Đức", detail: "TP.HCM · Cuối tuần" },
-];
+type TradingData = { locations: TradingLocation[]; selectedOptions: TradeOptionId[] };
+type TradingApiItem = { id: string; optionId: string | null; name: string; detail: string | null; enabled: boolean };
 
 const tradeOptions: Array<{ id: TradeOptionId; label: string }> = [
   { id: "nexus-night", label: "Nexus Night" },
@@ -24,54 +19,88 @@ const tradeOptions: Array<{ id: TradeOptionId; label: string }> = [
   { id: "ship-nationwide", label: "Ship toàn quốc" },
 ];
 
-const defaultOptions: TradeOptionId[] = ["nexus-night", "skirmish", "ship-inner-city"];
 const validOptionIds = new Set(tradeOptions.map((option) => option.id));
+const cacheLifetime = 5 * 60 * 1000;
+const tradingCache = new Map<string, TradingData & { cachedAt: number }>();
+const pendingRequests = new Map<string, Promise<TradingData>>();
+
+function readCachedTrading(username: string) {
+  const cached = tradingCache.get(username);
+  if (!cached || Date.now() - cached.cachedAt > cacheLifetime) {
+    tradingCache.delete(username);
+    return null;
+  }
+  return cached;
+}
+
+function loadTrading(username: string) {
+  const cached = readCachedTrading(username);
+  if (cached) return Promise.resolve(cached);
+
+  const pending = pendingRequests.get(username);
+  if (pending) return pending;
+
+  const request = fetch(`/api/users/${encodeURIComponent(username)}/trading`)
+    .then((response) => response.ok ? response.json() : Promise.reject())
+    .then((data: { items?: TradingApiItem[] }) => {
+      const items = data.items ?? [];
+      const result: TradingData = {
+        locations: items.filter((item) => item.optionId === null && item.enabled).map((item) => ({ id: item.id, name: item.name, detail: item.detail ?? "" })),
+        selectedOptions: items.filter((item) => item.optionId && item.enabled).map((item) => item.optionId as TradeOptionId).filter((id) => validOptionIds.has(id)),
+      };
+      tradingCache.set(username, { ...result, cachedAt: Date.now() });
+      return result;
+    })
+    .finally(() => pendingRequests.delete(username));
+
+  pendingRequests.set(username, request);
+  return request;
+}
 
 export function TradingLocations({ username, forceViewer = false }: { username: string; forceViewer?: boolean }) {
   const normalizedUsername = username.toLocaleLowerCase();
-  const locationsStorageKey = `ripbao.locations.${normalizedUsername}`;
-  const optionsStorageKey = `ripbao.trade-options.${normalizedUsername}`;
-  const [locations, setLocations] = useState<TradingLocation[]>(sampleLocations);
-  const [selectedOptions, setSelectedOptions] = useState<TradeOptionId[]>(defaultOptions);
-  const [isOwner, setIsOwner] = useState(false);
+  const { sessionUser } = useCart();
+  const initialData = readCachedTrading(normalizedUsername);
+  const [locations, setLocations] = useState<TradingLocation[]>(initialData?.locations ?? []);
+  const [selectedOptions, setSelectedOptions] = useState<TradeOptionId[]>(initialData?.selectedOptions ?? []);
+  const [ready, setReady] = useState(Boolean(initialData));
   const [isEditing, setIsEditing] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
   const scrollFrameRef = useRef<number | null>(null);
   const initialScrollRef = useRef(0);
 
   useEffect(() => {
-    const signedInAs = window.localStorage.getItem(sessionKey);
-    setIsOwner(!forceViewer && signedInAs?.toLocaleLowerCase() === normalizedUsername);
+    let active = true;
+    const cached = readCachedTrading(normalizedUsername);
+    if (!cached) setReady(false);
 
-    const savedLocations = window.localStorage.getItem(locationsStorageKey);
-    if (savedLocations) {
-      try {
-        const parsedLocations = JSON.parse(savedLocations) as LegacyLocation[];
-        setLocations(parsedLocations.filter((location) => location.kind !== "event").map(({ id, name, detail }) => ({ id, name, detail })));
-      } catch {
-        window.localStorage.removeItem(locationsStorageKey);
-      }
-    }
+    loadTrading(normalizedUsername).then((data) => {
+      if (!active) return;
+      setLocations(data.locations);
+      setSelectedOptions(data.selectedOptions);
+    }).catch(() => {
+      if (!active) return;
+      setLocations([]);
+      setSelectedOptions([]);
+    }).finally(() => {
+      if (active) setReady(true);
+    });
 
-    const savedOptions = window.localStorage.getItem(optionsStorageKey);
-    if (savedOptions) {
-      try {
-        const parsedOptions = JSON.parse(savedOptions) as string[];
-        const migratedOptions = parsedOptions.map((option) => {
-          if (option === "inner-city") return "ship-inner-city";
-          if (option === "nationwide") return "ship-nationwide";
-          return option;
-        }).filter((option): option is TradeOptionId => validOptionIds.has(option as TradeOptionId));
-        setSelectedOptions([...new Set(migratedOptions)]);
-      } catch {
-        window.localStorage.removeItem(optionsStorageKey);
-      }
-    }
-  }, [forceViewer, locationsStorageKey, normalizedUsername, optionsStorageKey]);
+    return () => { active = false; };
+  }, [normalizedUsername]);
 
   useEffect(() => () => {
     if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
   }, []);
+
+  function savePreferences(nextLocations: TradingLocation[], nextOptions: TradeOptionId[]) {
+    tradingCache.set(normalizedUsername, { locations: nextLocations, selectedOptions: nextOptions, cachedAt: Date.now() });
+    const items = [
+      ...tradeOptions.map((option, position) => ({ optionId: option.id, name: option.label, enabled: nextOptions.includes(option.id), position })),
+      ...nextLocations.map((location, index) => ({ optionId: null, name: location.name, detail: location.detail, enabled: true, position: 100 + index })),
+    ];
+    void fetch(`/api/users/${encodeURIComponent(normalizedUsername)}/trading`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items }) });
+  }
 
   function addLocation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -82,20 +111,20 @@ export function TradingLocations({ username, forceViewer = false }: { username: 
 
     const nextLocations = [...locations, { id: crypto.randomUUID(), name, detail }];
     setLocations(nextLocations);
-    window.localStorage.setItem(locationsStorageKey, JSON.stringify(nextLocations));
+    savePreferences(nextLocations, selectedOptions);
     event.currentTarget.reset();
   }
 
   function removeLocation(id: string) {
     const nextLocations = locations.filter((location) => location.id !== id);
     setLocations(nextLocations);
-    window.localStorage.setItem(locationsStorageKey, JSON.stringify(nextLocations));
+    savePreferences(nextLocations, selectedOptions);
   }
 
   function toggleOption(id: TradeOptionId) {
     const nextOptions = selectedOptions.includes(id) ? selectedOptions.filter((option) => option !== id) : [...selectedOptions, id];
     setSelectedOptions(nextOptions);
-    window.localStorage.setItem(optionsStorageKey, JSON.stringify(nextOptions));
+    savePreferences(locations, nextOptions);
   }
 
   function startAutoScroll() {
@@ -122,7 +151,17 @@ export function TradingLocations({ username, forceViewer = false }: { username: 
     listRef.current?.scrollTo({ left: initialScrollRef.current, behavior: "smooth" });
   }
 
+  const isOwner = !forceViewer && sessionUser?.username === normalizedUsername;
   const visibleOptions = isOwner && isEditing ? tradeOptions : tradeOptions.filter((option) => selectedOptions.includes(option.id));
+
+  if (!ready) {
+    return (
+      <section aria-busy="true" aria-label="Đang tải phương thức giao dịch">
+        <div className="mb-3 h-6 w-48 animate-pulse rounded-sm bg-secondary motion-reduce:animate-none" />
+        <div className="h-11 animate-pulse rounded-sm border bg-card/75 motion-reduce:animate-none" />
+      </section>
+    );
+  }
 
   return (
     <section className="flex flex-col" aria-labelledby="trading-locations-title">

@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import { ChevronDown } from "lucide-react";
+import { announceDropdownOpen } from "@/lib/dropdown-coordination";
 import { RIFTBOUND_DOMAIN_COLORS } from "@/lib/riftbound-constants";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ export function FilterDropdown({
   allowEmpty?: boolean;
 }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
+  const dropdownId = useId();
 
   const choose = (nextValue: string) => {
     onChange(nextValue);
@@ -46,11 +48,7 @@ export function FilterDropdown({
   const closeOtherDropdowns = () => {
     const current = detailsRef.current;
     if (!current?.open) return;
-
-    document.querySelectorAll<HTMLDetailsElement>("details[data-filter-dropdown][open]")
-      .forEach((dropdown) => {
-        if (dropdown !== current) dropdown.removeAttribute("open");
-      });
+    announceDropdownOpen(dropdownId, current);
   };
 
   return (

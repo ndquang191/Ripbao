@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { Layers, Minus, Plus, Search, ShoppingBag, X } from "lucide-react";
+import { Layers, Minus, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,36 +39,35 @@ export type CollectionCard = {
 
 const knownSets = ["Origins", "Spiritforged", "Unleashed", "Vendetta"];
 const sortOptions = ["Theo tên", "Giá tăng dần", "Giá giảm dần"] as const;
-const collectionDraftKey = "ripbao.collection.draft.v2";
 
-export function Collection({ cards, username }: { cards: CollectionCard[]; username: string }) {
+export function Collection({ cards, username, facebookUrl, isOwner = false }: { cards: CollectionCard[]; username: string; facebookUrl?: string | null; isOwner?: boolean }) {
   const { addItem, items, updateQuantity } = useCart();
+  const sellerKey = username.toLocaleLowerCase();
   const [query, setQuery] = useState("");
   const [set, setSet] = useState("");
   const [type, setType] = useState("");
   const [rarity, setRarity] = useState("");
   const [faction, setFaction] = useState("");
   const [sort, setSort] = useState<(typeof sortOptions)[number]>("Theo tên");
-  const [ownedQuantities, setOwnedQuantities] = useState<Record<string, number>>({});
+  const [onlySelected, setOnlySelected] = useState(false);
+  const [previewCard, setPreviewCard] = useState<CollectionCard | null>(null);
+  const ownedCards = cards;
 
   useEffect(() => {
-    try {
-      const draft = window.localStorage.getItem(collectionDraftKey);
-      if (!draft) return;
-      const edits = JSON.parse(draft) as Record<string, { quantity?: number }>;
-      setOwnedQuantities(Object.fromEntries(
-        Object.entries(edits)
-          .filter(([, edit]) => (edit.quantity ?? 0) > 0)
-          .map(([id, edit]) => [id, edit.quantity ?? 0]),
-      ));
-    } catch {
-      setOwnedQuantities({});
-    }
-  }, []);
+    if (!previewCard) return;
 
-  const ownedCards = useMemo(() => cards
-    .filter((card) => (ownedQuantities[card.id] ?? 0) > 0)
-    .map((card) => ({ ...card, quantity: ownedQuantities[card.id] })), [cards, ownedQuantities]);
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPreviewCard(null);
+    };
+
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [previewCard]);
 
   const filterOptions = useMemo(() => ({
     sets: mergeValues(knownSets, ownedCards.map((card) => card.set)),
@@ -88,14 +86,15 @@ export function Collection({ cards, username }: { cards: CollectionCard[]; usern
       const matchesType = !type || card.type === type;
       const matchesRarity = !rarity || card.rarity === rarity;
       const matchesFaction = !faction || card.domains?.includes(faction) || card.faction === faction;
-      return matchesQuery && matchesSet && matchesType && matchesRarity && matchesFaction;
+      const matchesSelected = !onlySelected || items.some((item) => item.key === `${sellerKey}:${card.id}`);
+      return matchesQuery && matchesSet && matchesType && matchesRarity && matchesFaction && matchesSelected;
     });
 
     return matches.sort((a, b) => compareCards(a, b, sort));
-  }, [faction, ownedCards, query, rarity, set, sort, type]);
+  }, [faction, items, onlySelected, ownedCards, query, rarity, sellerKey, set, sort, type]);
 
-  const hasFilters = query.length > 0 || Boolean(set || type || rarity || faction);
-  const clearFilters = () => { setQuery(""); setSet(""); setType(""); setRarity(""); setFaction(""); };
+  const hasFilters = query.length > 0 || Boolean(set || type || rarity || faction || onlySelected);
+  const clearFilters = () => { setQuery(""); setSet(""); setType(""); setRarity(""); setFaction(""); setOnlySelected(false); };
 
   return (
     <>
@@ -115,6 +114,7 @@ export function Collection({ cards, username }: { cards: CollectionCard[]; usern
         <FilterDropdown label="Loại card" value={type} options={filterOptions.types} onChange={setType} />
         <FilterDropdown label="Độ hiếm" value={rarity} options={filterOptions.rarities} onChange={setRarity} />
         <DomainFilter value={faction} options={filterOptions.domains} onChange={setFaction} />
+        {!isOwner && <label className={cn("flex h-8 cursor-pointer items-center gap-2 rounded-sm border px-3 text-[10px] font-bold transition-colors", onlySelected && "border-[#8ba55e] bg-[#edf3e5] text-[#506b32]")}><input type="checkbox" checked={onlySelected} onChange={(event) => setOnlySelected(event.target.checked)} className="size-3 accent-[#607d35]" /> Đã chọn</label>}
         <FilterDropdown label="Sắp xếp" value={sort} options={sortOptions} onChange={(value) => setSort(value as (typeof sortOptions)[number])} allowEmpty={false} className="ml-auto [&>summary]:min-w-36" />
         <span className="shrink-0 text-[10px] text-muted-foreground">{filteredCards.length}/{ownedCards.length} card</span>
         {hasFilters && <button type="button" onClick={clearFilters} className="inline-flex shrink-0 items-center gap-1 text-[10px] font-bold text-[#607d35] hover:underline"><X className="size-3" /> Xoá lọc</button>}
@@ -123,52 +123,80 @@ export function Collection({ cards, username }: { cards: CollectionCard[]; usern
       {filteredCards.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {filteredCards.map((card) => {
-            const cartItem = items.find((item) => item.key === `${username}:${card.id}`);
+            const cartItem = items.find((item) => item.key === `${sellerKey}:${card.id}`);
             const atLimit = (cartItem?.quantity ?? 0) >= card.quantity;
             return (
-            <Card key={card.id} className="group relative flex h-full flex-col overflow-hidden transition-all hover:-translate-y-1 hover:border-[#8ba55e] hover:shadow-lg">
+            <Card
+              key={card.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Xem ảnh ${card.name}`}
+              onClick={() => card.imageUrl && setPreviewCard(card)}
+              onKeyDown={(event) => {
+                if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ") && card.imageUrl) {
+                  event.preventDefault();
+                  setPreviewCard(card);
+                }
+              }}
+              className="group relative flex h-full cursor-default flex-col overflow-visible transition-all hover:-translate-y-1 hover:border-[#8ba55e] hover:shadow-lg"
+            >
+              {cartItem && <button type="button" onClick={(event) => { event.stopPropagation(); updateQuantity(cartItem.key, 0); }} className="absolute top-0 right-0 z-30 grid min-w-8 translate-x-1/2 -translate-y-1/2 place-items-center rounded-sm border-2 border-card bg-accent px-2 py-1 text-[11px] font-black text-accent-foreground shadow-md" aria-label={`Xoá ${card.name} khỏi giỏ`} title="Xoá khỏi giỏ"><span className="group-hover:hidden">×{cartItem.quantity}</span><Trash2 className="hidden size-3.5 group-hover:block" /></button>}
               <div className={cn(
                 "relative m-2.5 mb-0 grid aspect-[469/655] place-items-center overflow-hidden rounded-[10px] bg-gradient-to-br",
-                card.gradient,
+                  card.gradient,
               )}>
-                  <button
-                    type="button"
-                    disabled={atLimit}
-                    onClick={() => cartItem
-                      ? updateQuantity(cartItem.key, cartItem.quantity + 1)
-                      : addItem({ cardId: card.id, seller: username, name: card.name, set: card.set, number: card.number, finish: card.finish, condition: card.condition, price: card.price, imageUrl: card.imageUrl, glyph: card.glyph, gradient: card.gradient, stock: card.quantity })}
-                    className="absolute inset-0 z-10 cursor-pointer disabled:cursor-default"
-                    aria-label={atLimit ? `${card.name} đã đạt số lượng tối đa` : `Đặt ${card.name}`}
-                    title={atLimit ? "Đã đạt số lượng tối đa" : "Thêm vào giỏ"}
-                  />
                   {card.imageUrl && <img src={card.imageUrl} alt={`Artwork của ${card.name}`} className="absolute inset-0 size-full object-cover" />}
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center bg-gradient-to-t from-black/65 via-black/20 to-transparent px-2 pt-10 pb-2 opacity-0 transition-all duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+                  {!isOwner && <div className="pointer-events-none absolute inset-x-0 bottom-[30%] z-20 flex justify-center px-2 opacity-0 transition-all duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
                     {cartItem ? (
                       <div className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-white/70 bg-card/95 p-1 shadow-xl backdrop-blur-md">
-                        <button type="button" onClick={() => updateQuantity(cartItem.key, cartItem.quantity - 1)} className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground" aria-label="Giảm số lượng"><Minus className="size-3" /></button>
-                        <span className="min-w-8 text-center text-[10px] font-black">{cartItem.quantity}/{card.quantity}</span>
-                        <button type="button" disabled={atLimit} onClick={() => updateQuantity(cartItem.key, cartItem.quantity + 1)} className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30" aria-label="Tăng số lượng"><Plus className="size-3" /></button>
+                        <button type="button" onClick={(event) => { event.stopPropagation(); updateQuantity(cartItem.key, cartItem.quantity - 1); }} className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground" aria-label="Giảm số lượng"><Minus className="size-3" /></button>
+                        <button type="button" disabled={atLimit} onClick={(event) => { event.stopPropagation(); updateQuantity(cartItem.key, cartItem.quantity + 1); }} className="min-w-8 rounded-full px-1 text-center text-[10px] font-black hover:bg-secondary disabled:cursor-default disabled:opacity-60" aria-label={`Tăng số lượng ${card.name}`}>{cartItem.quantity}/{card.quantity}</button>
+                        <button type="button" disabled={atLimit} onClick={(event) => { event.stopPropagation(); updateQuantity(cartItem.key, cartItem.quantity + 1); }} className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30" aria-label="Tăng số lượng"><Plus className="size-3" /></button>
                       </div>
                     ) : (
-                      <Button type="button" variant="accent" size="icon" className="pointer-events-auto size-10 rounded-full border border-white/70 shadow-xl transition-transform hover:scale-105" aria-label={`Thêm ${card.name} vào giỏ`} title="Thêm vào giỏ" onClick={() => addItem({ cardId: card.id, seller: username, name: card.name, set: card.set, number: card.number, finish: card.finish, condition: card.condition, price: card.price, imageUrl: card.imageUrl, glyph: card.glyph, gradient: card.gradient, stock: card.quantity })}>
+                      <Button type="button" variant="accent" size="icon" className="pointer-events-auto size-10 cursor-pointer rounded-full border border-white/70 shadow-xl transition-transform hover:scale-105" aria-label={`Thêm ${card.name} vào giỏ`} title="Thêm vào giỏ" onClick={(event) => { event.stopPropagation(); addItem({ cardId: card.id, seller: sellerKey, sellerFacebookUrl: facebookUrl ?? undefined, name: card.name, set: card.set, number: card.number, finish: card.finish, condition: card.condition, price: card.price, imageUrl: card.imageUrl, glyph: card.glyph, gradient: card.gradient, stock: card.quantity }); }}>
                         <ShoppingBag className="size-4" strokeWidth={2.25} />
                       </Button>
                     )}
-                  </div>
+                  </div>}
               </div>
-              <Link href={`/u/${encodeURIComponent(username)}/cards/${card.id}`} className="block">
+              <div className="block">
                 <CardContent className="p-3 pb-2">
-                  <div className="flex items-center justify-between text-[8px] font-bold tracking-wider text-muted-foreground uppercase"><span>{card.set} · {card.number}</span><span className="text-[#8b6b31]">{card.rarity}</span></div>
-                  <h3 className="mt-2 truncate font-serif text-sm font-semibold sm:text-base">{card.name}</h3>
-                  <div className="mt-3 flex items-end justify-between border-t pt-2.5"><div><span className="block text-[8px] text-muted-foreground">Giá bán</span><strong className="font-serif text-base">{card.price}</strong></div><div className="text-right"><span className="block text-[8px] text-muted-foreground">{card.condition}</span><span className="text-[9px] font-bold">SL: {card.quantity}</span></div></div>
+                  <div className="mt-1 flex min-w-0 items-center gap-1.5">
+                    <span className="shrink-0 rounded-sm border bg-secondary px-1.5 py-0.5 text-[8px] font-black tracking-wider text-muted-foreground">{setCode(card.set)}</span>
+                    <div className="card-title min-w-0 flex-1 overflow-hidden">
+                      <h3 className="card-title-text w-max min-w-full font-serif text-sm font-semibold sm:text-base">{card.name}</h3>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between border-t pt-1.5"><strong className="font-serif text-base">{card.price}</strong><span className="grid min-w-6 place-items-center rounded-sm border bg-secondary px-1.5 py-0.5 text-[9px] font-black">×{card.quantity}</span></div>
                 </CardContent>
-              </Link>
+              </div>
             </Card>
           )})}
         </div>
       ) : (
         <div className="grid min-h-48 place-items-center rounded-lg border border-dashed bg-card/50 px-6 text-center">
           <div><p className="font-serif text-lg font-semibold">Không tìm thấy card phù hợp</p><button type="button" onClick={clearFilters} className="mt-2 text-xs font-bold text-[#607d35] underline underline-offset-4">Xoá toàn bộ bộ lọc</button></div>
+        </div>
+      )}
+
+      {previewCard?.imageUrl && (
+        <div
+          className="fixed inset-0 z-50 grid cursor-zoom-out place-items-center bg-black/85 p-4 backdrop-blur-sm sm:p-8"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Ảnh ${previewCard.name}`}
+          onMouseDown={(event) => event.target === event.currentTarget && setPreviewCard(null)}
+        >
+          <img
+            src={previewCard.imageUrl}
+            alt={previewCard.name}
+            className="max-h-[80vh] max-w-full cursor-default rounded-lg object-contain shadow-2xl"
+            onMouseDown={(event) => event.stopPropagation()}
+          />
+          <button type="button" onClick={() => setPreviewCard(null)} className="absolute top-4 right-4 grid size-10 place-items-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/75" aria-label="Đóng ảnh">
+            <X className="size-5" />
+          </button>
         </div>
       )}
     </>
@@ -181,6 +209,16 @@ function uniqueValues(values: string[]) {
 
 function mergeValues(requiredValues: string[], actualValues: string[]) {
   return [...new Set([...requiredValues, ...actualValues.filter(Boolean)])];
+}
+
+function setCode(set: string) {
+  const knownCodes: Record<string, string> = {
+    Origins: "OGN",
+    Spiritforged: "SFD",
+    Unleashed: "UNL",
+    Vendetta: "VEN",
+  };
+  return knownCodes[set] ?? set.replace(/[^a-z0-9]/gi, "").slice(0, 3).toUpperCase();
 }
 
 function compareCards(a: CollectionCard, b: CollectionCard, sort: (typeof sortOptions)[number]) {
