@@ -5,22 +5,17 @@ import { AccountLink } from "@/components/account-link";
 import { TradingLocations } from "./trading-locations";
 import { formatCurrency } from "@/lib/currency";
 import { getDb } from "@/lib/db";
+import { BrandLogo } from "@/components/brand-logo";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/lib/auth";
 import { UserRound } from "lucide-react";
 import { PageTitle } from "@/components/page-title";
 import { notFound, redirect } from "next/navigation";
 
-const fallbackCards: CollectionCard[] = [
-  { id: "jinx-rebel", name: "Jinx, Rebel", set: "Origins", number: "181/221", rarity: "Epic", type: "Champion", faction: "Chaos", finish: "Foil", condition: "Near Mint", price: formatCurrency(1_070_000), quantity: 1, glyph: "✦", gradient: "from-[#b82e96] via-[#663876] to-[#202656]" },
-  { id: "ahri-nine-tailed", name: "Ahri, Nine-Tailed", set: "Origins", number: "042/221", rarity: "Rare", type: "Legend", faction: "Calm", finish: "No Foil", condition: "Near Mint", price: formatCurrency(455_000), quantity: 2, glyph: "◈", gradient: "from-[#eeaaaf] via-[#a35d84] to-[#532c72]" },
-  { id: "yasuo-unforgiven", name: "Yasuo, Unforgiven", set: "Origins", number: "096/221", rarity: "Epic", type: "Champion", faction: "Calm", finish: "No Foil", condition: "Excellent", price: formatCurrency(788_000), quantity: 1, glyph: "◇", gradient: "from-[#92c5d7] via-[#4e7c8f] to-[#264958]" },
-];
-
 async function loadSeller(username: string) {
   const sql = getDb();
   const users = await sql`
-    SELECT username, facebook_url AS "facebookUrl"
+    SELECT username, display_name AS "displayName", facebook_url AS "facebookUrl"
     FROM users
     WHERE username = ${username.toLowerCase()}
     LIMIT 1
@@ -44,15 +39,7 @@ async function loadSeller(username: string) {
     const url = new URL(String(value));
     if (url.protocol === "https:" || url.protocol === "http:") facebookUrl = url.toString();
   }
-  return { cards, facebookUrl };
-}
-
-function Logo() {
-  return (
-    <span className="relative block h-9 w-8 rounded-sm border-2 border-accent bg-primary shadow-sm">
-      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-serif text-lg leading-none text-accent">R</span>
-    </span>
-  );
+  return { cards, displayName: String(users[0].displayName), facebookUrl };
 }
 
 function FacebookIcon() {
@@ -61,28 +48,24 @@ function FacebookIcon() {
 
 export default async function SellerPage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
-  return <SellerView username={username} />;
-}
-
-export async function SellerView({ username, forceViewer = false, demo = false }: { username: string; forceViewer?: boolean; demo?: boolean }) {
   let displayUsername: string;
   try { displayUsername = decodeURIComponent(username); } catch { notFound(); }
   let seller: Awaited<ReturnType<typeof loadSeller>>;
   let viewer: Awaited<ReturnType<typeof getCurrentUser>>;
   try {
-    [seller, viewer] = await Promise.all([demo ? Promise.resolve({ cards: fallbackCards, facebookUrl: null }) : loadSeller(displayUsername), getCurrentUser()]);
+    [seller, viewer] = await Promise.all([loadSeller(displayUsername), getCurrentUser()]);
   } catch {
     redirect("/error");
   }
   if (!seller) notFound();
-  const { cards, facebookUrl } = seller;
-  const isOwner = !forceViewer && viewer?.username === displayUsername.toLowerCase();
+  const { cards, displayName, facebookUrl } = seller;
+  const isOwner = viewer?.username === displayUsername.toLowerCase();
 
   return (
     <main className="paper-grid min-h-dvh">
       <div className="mx-auto w-full max-w-6xl px-5 py-5 sm:px-8 lg:py-7">
         <div className="flex items-center justify-between border-b pb-5">
-          <Link href="/" className="flex items-center gap-3 text-sm font-extrabold tracking-[0.16em]"><Logo /> RIPBAO</Link>
+          <Link href="/" className="flex items-center gap-3 text-sm font-extrabold tracking-[0.16em]"><BrandLogo /> RIPBAO</Link>
           <div className="flex items-center gap-2">
             <AccountLink />
           </div>
@@ -91,18 +74,18 @@ export async function SellerView({ username, forceViewer = false, demo = false }
         <section className="border-b py-7">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <PageTitle icon={UserRound}>@{displayUsername}</PageTitle>
-              {facebookUrl && <a href={facebookUrl} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline", size: "icon" }), "size-8")} aria-label={`Mở Facebook của @${displayUsername}`} title="Mở Facebook"><FacebookIcon /></a>}
+              <PageTitle icon={UserRound}>{displayName}</PageTitle>
+              {facebookUrl && <a href={facebookUrl} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline", size: "icon" }), "size-8")} aria-label={`Mở Facebook của ${displayName}`} title="Mở Facebook"><FacebookIcon /></a>}
               <span className="rounded-sm bg-accent px-2 py-1 text-[9px] font-extrabold tracking-wider text-accent-foreground uppercase">Đang bán</span>
             </div>
           </div>
           <div className="mt-4">
-            <TradingLocations username={displayUsername} forceViewer={forceViewer} />
+            <TradingLocations username={displayUsername} />
           </div>
         </section>
 
         <section className="py-6">
-          <Collection cards={cards} username={displayUsername} facebookUrl={facebookUrl} isOwner={isOwner} />
+          <Collection cards={cards} username={displayUsername} displayName={displayName} facebookUrl={facebookUrl} isOwner={isOwner} />
         </section>
       </div>
     </main>

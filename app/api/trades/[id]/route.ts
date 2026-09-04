@@ -12,12 +12,16 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
   const sql = getDb();
   const result = await sql`
-    DELETE FROM trade_requests
-    WHERE id = ${id} AND (buyer_id = ${user.id} OR seller_id = ${user.id})
+    UPDATE trade_requests
+    SET buyer_hidden_at = CASE WHEN buyer_id = ${user.id} THEN now() ELSE buyer_hidden_at END,
+        seller_hidden_at = CASE WHEN seller_id = ${user.id} THEN now() ELSE seller_hidden_at END,
+        updated_at = now()
+    WHERE id = ${id} AND status = 'completed'
+      AND (buyer_id = ${user.id} OR seller_id = ${user.id})
     RETURNING id
   `;
-  if (!result[0]) return NextResponse.json({ error: "Không thể xoá giao dịch này." }, { status: 404 });
-  return NextResponse.json({ deleted: true });
+  if (!result[0]) return NextResponse.json({ error: "Chỉ có thể ẩn giao dịch đã hoàn thành." }, { status: 409 });
+  return NextResponse.json({ hidden: true });
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {

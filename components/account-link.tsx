@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useId, useState } from "react";
 import Link from "next/link";
-import { Handshake, LibraryBig, LogOut, Settings, UserRound, X } from "lucide-react";
+import { Handshake, LibraryBig, LogOut, Settings, X } from "lucide-react";
 import { CartLink } from "@/components/cart-link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,7 +96,7 @@ export function AccountLink({ className }: { className?: string }) {
   }
 
   if (sessionUser?.isGuest) {
-    return <div className={cn("flex items-center gap-1.5", className)}><Link href="/trades" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "px-2.5")}><Handshake className="size-3.5" />Giao dịch</Link><CartLink /><span className={cn(buttonVariants({ variant: "outline", size: "sm" }), "pointer-events-none")}><UserRound className="size-3.5" />{sessionUser.displayName}</span></div>;
+    return <div className={cn("flex items-center gap-1.5", className)}><Link href="/trades" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "px-2.5")}><Handshake className="size-3.5" />Giao dịch</Link><CartLink /><Link href="/login" className={buttonVariants({ variant: "outline", size: "sm" })}>Đăng nhập</Link></div>;
   }
 
   return (
@@ -105,7 +105,7 @@ export function AccountLink({ className }: { className?: string }) {
         <Link href="/trades" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "relative px-2.5")} title="Giao dịch"><Handshake className="size-3.5" /><span className="hidden xl:inline">Giao dịch</span>{pendingTrades > 0 && <span className="absolute -top-1.5 -right-1.5 grid min-w-4.5 h-4.5 place-items-center rounded-full bg-destructive px-1 text-[8px] font-black text-white">{pendingTrades}</span>}</Link>
         <CartLink />
         <div className="relative flex h-8 items-center">
-          <button type="button" onClick={() => setAccountMenuOpen((open) => !open)} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "group size-8 cursor-pointer overflow-hidden rounded-md p-0 hover:border-primary/50 hover:bg-secondary hover:shadow-md")} aria-label={`Mở menu của ${displayName || username}`} aria-expanded={accountMenuOpen} title="Tài khoản"><img src={`https://api.dicebear.com/10.x/critters/svg?scale=0.94&borderRadius=12&seed=${encodeURIComponent(username)}`} alt="" className="size-full object-cover transition-transform duration-200 group-hover:scale-110" /></button>
+          <button type="button" onClick={() => setAccountMenuOpen((open) => !open)} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "group size-8 cursor-pointer overflow-hidden rounded-md p-0 hover:border-primary/50 hover:bg-secondary hover:shadow-md")} aria-label={`Mở menu của ${displayName}`} aria-expanded={accountMenuOpen} title="Tài khoản"><img src={`https://api.dicebear.com/10.x/critters/svg?scale=0.94&borderRadius=12&seed=${encodeURIComponent(displayName)}`} alt="" className="size-full object-cover transition-transform duration-200 group-hover:scale-110" /></button>
           {accountMenuOpen && <>
             <button type="button" className="fixed inset-0 z-40 cursor-default" onClick={() => setAccountMenuOpen(false)} aria-label="Đóng menu tài khoản" />
             <div className="absolute right-0 top-full z-50 mt-2 w-44 rounded-md border bg-card p-1.5 shadow-xl" role="menu">
@@ -133,7 +133,7 @@ export function AccountLink({ className }: { className?: string }) {
       {profileOpen && <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="profile-drawer-title">
         <button type="button" className="absolute inset-0 bg-primary/35 backdrop-blur-[1px]" onClick={() => setProfileOpen(false)} aria-label="Đóng profile" />
         <aside className="absolute inset-y-0 left-0 flex w-[min(92vw,420px)] flex-col border-r bg-card shadow-2xl">
-          <div className="flex items-start justify-between border-b px-5 py-5 sm:px-6"><div><h2 id="profile-drawer-title" className="font-serif text-xl font-semibold">Chỉnh sửa profile</h2><p className="mt-1 text-xs text-muted-foreground">@{username}</p></div><Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => setProfileOpen(false)} aria-label="Đóng"><X className="size-4" /></Button></div>
+          <div className="flex items-start justify-between border-b px-5 py-5 sm:px-6"><div><h2 id="profile-drawer-title" className="font-serif text-xl font-semibold">Chỉnh sửa profile</h2><p className="mt-1 text-xs text-muted-foreground">{displayName}</p></div><Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => setProfileOpen(false)} aria-label="Đóng"><X className="size-4" /></Button></div>
           <form className="flex flex-1 flex-col overflow-y-auto p-5 sm:p-6" onSubmit={saveProfile}>
             <div className="space-y-4">
               <label className="block space-y-2 text-xs font-bold" htmlFor="profile-display-name">Tên hiển thị<Input id="profile-display-name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Tên của bạn" required /></label>

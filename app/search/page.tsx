@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/currency";
 import { getDb } from "@/lib/db";
+import { BrandLogo } from "@/components/brand-logo";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ type MatchingCard = {
 
 type CollectionResult = {
   username: string;
+  displayName: string;
   tradingLocations: string[];
   cards: MatchingCard[];
 };
@@ -41,7 +43,7 @@ async function searchCollections(rawQuery: string): Promise<CollectionResult[]> 
   try {
     const sql = getDb();
     const rows = await sql`
-      SELECT users.username,
+      SELECT users.username, users.display_name AS "displayName",
         COALESCE((
           SELECT array_agg(preference.name ORDER BY
             CASE WHEN preference.option_id IS NULL THEN 0 ELSE 1 END,
@@ -80,6 +82,7 @@ async function searchCollections(rawQuery: string): Promise<CollectionResult[]> 
       const username = String(row.username);
       const collection = collections.get(username) ?? {
         username,
+        displayName: String(row.displayName),
         tradingLocations: Array.isArray(row.tradingLocations) ? row.tradingLocations.map(String) : [],
         cards: [],
       };
@@ -98,14 +101,10 @@ async function searchCollections(rawQuery: string): Promise<CollectionResult[]> 
       collections.set(username, collection);
     }
 
-    return [...collections.values()].sort((a, b) => b.cards.length - a.cards.length || a.username.localeCompare(b.username));
+    return [...collections.values()].sort((a, b) => b.cards.length - a.cards.length || a.displayName.localeCompare(b.displayName, "vi"));
   } catch {
     return [];
   }
-}
-
-function Logo() {
-  return <span className="relative block h-9 w-8 rounded-sm border-2 border-accent bg-primary shadow-sm"><span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-serif text-lg leading-none text-accent">R</span></span>;
 }
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
@@ -119,7 +118,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
     <main className="paper-grid min-h-dvh">
       <div className="mx-auto w-full max-w-6xl px-5 py-5 sm:px-8 lg:py-7">
         <header className="flex items-center justify-between border-b pb-5">
-          <Link href="/" className="flex items-center gap-3 text-sm font-extrabold tracking-[0.16em]"><Logo /> RIPBAO</Link>
+          <Link href="/" className="flex items-center gap-3 text-sm font-extrabold tracking-[0.16em]"><BrandLogo /> RIPBAO</Link>
           <AccountLink />
         </header>
 
@@ -142,9 +141,9 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
               <Card key={collection.username} className="overflow-hidden bg-card">
                 <CardContent className="p-0">
                   <div className="flex items-center gap-3 border-b bg-card px-4 py-3">
-                    <img src={`https://api.dicebear.com/10.x/critters/svg?scale=0.94&borderRadius=50&seed=${encodeURIComponent(collection.username)}`} alt="" className="size-9 rounded-full border bg-card" />
+                    <img src={`https://api.dicebear.com/10.x/critters/svg?scale=0.94&borderRadius=50&seed=${encodeURIComponent(collection.displayName)}`} alt="" className="size-9 rounded-full border bg-card" />
                     <div className="min-w-0 flex-1">
-                      <h2 className="truncate text-sm font-extrabold">@{collection.username}</h2>
+                      <h2 className="truncate text-sm font-extrabold">{collection.displayName}</h2>
                       <p className="mt-0.5 flex min-w-0 items-center gap-1 truncate text-[10px] text-muted-foreground"><MapPin className="size-3 shrink-0" /><span className="truncate">{collection.tradingLocations.length > 0 ? collection.tradingLocations.join(" · ") : "Chưa cập nhật địa điểm giao dịch"}</span></p>
                     </div>
                     <Link href={`/u/${collection.username}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-card")}>Xem collection <ArrowUpRight className="size-3.5" /></Link>

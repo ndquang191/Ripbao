@@ -40,7 +40,7 @@ export type CollectionCard = {
 const knownSets = ["Origins", "Spiritforged", "Unleashed", "Vendetta"];
 const sortOptions = ["Theo tên", "Giá tăng dần", "Giá giảm dần"] as const;
 
-export function Collection({ cards, username, facebookUrl, isOwner = false }: { cards: CollectionCard[]; username: string; facebookUrl?: string | null; isOwner?: boolean }) {
+export function Collection({ cards, username, displayName, facebookUrl, isOwner = false }: { cards: CollectionCard[]; username: string; displayName: string; facebookUrl?: string | null; isOwner?: boolean }) {
   const { addItem, items, updateQuantity } = useCart();
   const sellerKey = username.toLocaleLowerCase();
   const [query, setQuery] = useState("");
@@ -154,7 +154,7 @@ export function Collection({ cards, username, facebookUrl, isOwner = false }: { 
                         <button type="button" disabled={atLimit} onClick={(event) => { event.stopPropagation(); updateQuantity(cartItem.key, cartItem.quantity + 1); }} className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30" aria-label="Tăng số lượng"><Plus className="size-3" /></button>
                       </div>
                     ) : (
-                      <Button type="button" variant="accent" size="icon" className="pointer-events-auto size-10 cursor-pointer rounded-full border border-white/70 shadow-xl transition-transform hover:scale-105" aria-label={`Thêm ${card.name} vào giỏ`} title="Thêm vào giỏ" onClick={(event) => { event.stopPropagation(); addItem({ cardId: card.id, seller: sellerKey, sellerFacebookUrl: facebookUrl ?? undefined, name: card.name, set: card.set, number: card.number, finish: card.finish, condition: card.condition, price: card.price, imageUrl: card.imageUrl, glyph: card.glyph, gradient: card.gradient, stock: card.quantity }); }}>
+                      <Button type="button" variant="accent" size="icon" className="pointer-events-auto size-10 cursor-pointer rounded-full border border-white/70 shadow-xl transition-transform hover:scale-105" aria-label={`Thêm ${card.name} vào giỏ`} title="Thêm vào giỏ" onClick={(event) => { event.stopPropagation(); addItem({ cardId: card.id, seller: sellerKey, sellerDisplayName: displayName, sellerFacebookUrl: facebookUrl ?? undefined, name: card.name, set: card.set, number: card.number, finish: card.finish, condition: card.condition, price: card.price, imageUrl: card.imageUrl, glyph: card.glyph, gradient: card.gradient, stock: card.quantity }); }}>
                         <ShoppingBag className="size-4" strokeWidth={2.25} />
                       </Button>
                     )}

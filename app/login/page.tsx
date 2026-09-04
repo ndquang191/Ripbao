@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { BrandLogo } from "@/components/brand-logo";
 import { Input } from "@/components/ui/input";
 import { type SessionUser, useCart } from "@/components/cart-provider";
 
@@ -42,11 +43,7 @@ export default function LoginPage() {
         <Card className="border-primary/15 bg-card/95 shadow-[0_24px_70px_rgba(29,58,43,.12)] backdrop-blur-sm">
           <CardContent className="login-card-content p-5 sm:p-7">
             <Link href="/" className="login-brand mb-5 flex w-fit items-center gap-3 text-sm font-extrabold tracking-[0.16em] sm:mb-6">
-              <span className="relative block h-9 w-8 rounded-sm border-2 border-accent bg-primary shadow-sm">
-                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-serif text-lg leading-none text-accent">
-                  R
-                </span>
-              </span>
+              <BrandLogo />
               RIPBAO
             </Link>
 
@@ -59,7 +56,6 @@ export default function LoginPage() {
                   id="username"
                   name="username"
                   autoComplete="username"
-                  placeholder="bao.collects"
                   required
                   className="h-12 bg-background/70 text-base sm:text-sm"
                   aria-describedby={error ? "login-error" : undefined}

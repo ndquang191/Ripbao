@@ -1,3 +1,5 @@
+import { BrandLogo } from "@/components/brand-logo";
+
 export function PageLoading() {
   return (
     <main
@@ -8,7 +10,7 @@ export function PageLoading() {
       <div className="flex flex-col items-center gap-4" role="status">
         <div className="relative grid size-16 place-items-center">
           <span className="absolute inset-0 animate-ping rounded-full bg-accent/25 motion-reduce:animate-none" />
-          <span className="relative grid h-12 w-10 place-items-center rounded-sm border-2 border-accent bg-primary font-serif text-2xl text-accent shadow-lg">R</span>
+          <BrandLogo className="size-12 shadow-lg" />
         </div>
         <div className="text-center">
           <p className="text-xs font-extrabold tracking-[0.2em]">RIPBAO</p>

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { AccountLink } from "@/components/account-link";
 import { formatCurrency } from "@/lib/currency";
 import { getDb } from "@/lib/db";
+import { BrandLogo } from "@/components/brand-logo";
 
 export const dynamic = "force-dynamic";
 
@@ -99,9 +100,7 @@ export default async function Home() {
       <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5 py-5 sm:px-8 lg:py-7">
         <div className="flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3 text-sm font-extrabold tracking-[0.16em]">
-            <span className="relative block h-9 w-8 rounded-sm border-2 border-accent bg-primary shadow-sm">
-              <span className="absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-serif text-lg leading-none text-accent">R</span>
-            </span>
+            <BrandLogo />
             RIPBAO
           </Link>
           <div className="flex justify-self-end gap-2"><AccountLink /></div>
@@ -123,8 +122,8 @@ export default async function Home() {
                 <Link href={`/u/${seller.username}`} key={seller.username} className="group">
                   <Card className={cn("transition-all group-hover:translate-x-1 group-hover:border-[#8ba55e] group-hover:shadow-md", index === 0 && "border-primary bg-primary text-primary-foreground")}>
                     <CardContent className="flex items-center gap-4 p-3.5">
-                      <img src={`https://api.dicebear.com/10.x/critters/svg?scale=0.94&borderRadius=50&seed=${encodeURIComponent(seller.username)}`} alt={`Avatar của @${seller.username}`} className="size-11 shrink-0 rounded-full border bg-secondary object-cover" loading="lazy" decoding="async" />
-                      <div className="min-w-0 flex-1"><h2 className="truncate text-sm font-extrabold">@{seller.username}</h2><p className={cn("mt-1 truncate text-[10px] text-muted-foreground", index === 0 && "text-white/60")}>{seller.displayName} · {seller.cards} card · {seller.rare} card hiếm</p></div>
+                      <img src={`https://api.dicebear.com/10.x/critters/svg?scale=0.94&borderRadius=50&seed=${encodeURIComponent(seller.displayName)}`} alt={`Avatar của ${seller.displayName}`} className="size-11 shrink-0 rounded-full border bg-secondary object-cover" loading="lazy" decoding="async" />
+                      <div className="min-w-0 flex-1"><h2 className="truncate text-sm font-extrabold">{seller.displayName}</h2><p className={cn("mt-1 truncate text-[10px] text-muted-foreground", index === 0 && "text-white/60")}>{seller.cards} card · {seller.rare} card hiếm</p></div>
                       <ArrowUpRight className={cn("size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5", index === 0 && "text-accent")} />
                     </CardContent>
                   </Card>

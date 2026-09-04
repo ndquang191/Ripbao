@@ -8,6 +8,7 @@ export async function GET() {
   const sql = getDb();
   const items = await sql`
     SELECT listings.id AS "listingId", cards.id AS "cardId", sellers.username AS seller,
+      sellers.display_name AS "sellerDisplayName",
       sellers.facebook_url AS "sellerFacebookUrl",
       cards.name, cards.set_name AS "set", cards.collector_number AS number,
       listings.finish, listings.condition, listings.min_price_vnd AS "unitPrice",

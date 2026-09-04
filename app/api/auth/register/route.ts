@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSession, hashPassword, normalizeUsername, setSessionCookie, validUsername } from "@/lib/auth";
+import { createSession, getCurrentUser, hashPassword, normalizeUsername, setSessionCookie, validUsername } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 
 const defaultTradingOptions = [
@@ -23,6 +23,18 @@ export async function POST(request: Request) {
   try {
     const sql = getDb();
     const passwordHash = await hashPassword(password);
+    const currentUser = await getCurrentUser();
+    if (currentUser?.isGuest) {
+      await sql.transaction((tx) => [
+        tx`UPDATE users SET username = ${username}, display_name = ${displayName}, facebook_url = ${facebookUrl}, is_guest = false, updated_at = now() WHERE id = ${currentUser.id}`,
+        tx`INSERT INTO user_authentication (user_id, password_hash) VALUES (${currentUser.id}, ${passwordHash})`,
+        ...defaultTradingOptions.map(([optionId, name, position]) => tx`
+          INSERT INTO user_trading_preferences (user_id, option_id, name, enabled, position)
+          VALUES (${currentUser.id}, ${optionId}, ${name}, false, ${position})
+        `),
+      ]);
+      return NextResponse.json({ user: { id: currentUser.id, username, displayName, facebookUrl } }, { status: 201 });
+    }
     const result = await sql.transaction((tx) => [
       tx`INSERT INTO users (username, display_name, facebook_url) VALUES (${username}, ${displayName}, ${facebookUrl}) RETURNING id`,
       tx`

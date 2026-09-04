@@ -57,7 +57,7 @@ function loadTrading(username: string) {
   return request;
 }
 
-export function TradingLocations({ username, forceViewer = false }: { username: string; forceViewer?: boolean }) {
+export function TradingLocations({ username }: { username: string }) {
   const normalizedUsername = username.toLocaleLowerCase();
   const { sessionUser } = useCart();
   const initialData = readCachedTrading(normalizedUsername);
@@ -151,7 +151,7 @@ export function TradingLocations({ username, forceViewer = false }: { username: 
     listRef.current?.scrollTo({ left: initialScrollRef.current, behavior: "smooth" });
   }
 
-  const isOwner = !forceViewer && sessionUser?.username === normalizedUsername;
+  const isOwner = sessionUser?.username === normalizedUsername;
   const visibleOptions = isOwner && isEditing ? tradeOptions : tradeOptions.filter((option) => selectedOptions.includes(option.id));
 
   if (!ready) {

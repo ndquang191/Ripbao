@@ -19,6 +19,7 @@ import {
 	X,
 } from "lucide-react";
 import { AccountLink } from "@/components/account-link";
+import { BrandLogo } from "@/components/brand-logo";
 import { DomainFilter, FilterDropdown } from "@/components/domain-filter";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -254,9 +255,7 @@ export default function CollectionPage() {
 						href="/"
 						className="flex items-center gap-3 text-sm font-extrabold tracking-[.16em]"
 					>
-						<span className="grid h-9 w-8 place-items-center rounded-sm border-2 border-accent bg-primary font-serif text-lg text-accent">
-							R
-						</span>{" "}
+						<BrandLogo />{" "}
 						RIPBAO
 					</Link>
 					<AccountLink />

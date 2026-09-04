@@ -31,7 +31,8 @@ export async function GET() {
     LEFT JOIN trade_request_items AS items ON items.request_id = requests.id
     LEFT JOIN listings ON listings.id = items.listing_id
     LEFT JOIN cards ON cards.id = listings.card_id
-    WHERE requests.buyer_id = ${user.id} OR requests.seller_id = ${user.id}
+    WHERE (requests.buyer_id = ${user.id} AND requests.buyer_hidden_at IS NULL)
+      OR (requests.seller_id = ${user.id} AND requests.seller_hidden_at IS NULL)
     GROUP BY requests.id, buyers.id, sellers.id
     ORDER BY requests.created_at DESC
   `;
@@ -50,8 +51,7 @@ export async function POST(request: Request) {
     await setSessionCookie(session.token, session.expiresAt);
     user = { id: Number(rows[0].id), username, displayName, facebookUrl: null, isGuest: true } satisfies AuthUser;
   }
-  const body = await request.json().catch(() => null) as { phone?: string; items?: Array<{ seller?: string; cardId?: string; finish?: string; condition?: string; quantity?: number }> } | null;
-  const phone = String(body?.phone ?? "").replace(/[^0-9+]/g, "").slice(0, 16) || null;
+  const body = await request.json().catch(() => null) as { items?: Array<{ seller?: string; cardId?: string; finish?: string; condition?: string; quantity?: number }> } | null;
   const submitted = (body?.items ?? []).map((item) => ({ seller: String(item.seller ?? "").toLowerCase(), card_id: String(item.cardId ?? ""), finish: String(item.finish ?? "").toLowerCase() === "foil" ? "foil" : "nonfoil", condition: String(item.condition ?? "unspecified"), quantity: Math.max(1, Math.floor(Number(item.quantity) || 1)) })).filter((item) => item.seller && item.card_id);
   const payload = JSON.stringify(submitted);
   const rows = await sql`
@@ -74,8 +74,8 @@ export async function POST(request: Request) {
       WHERE listings.is_active AND listings.quantity > 0 AND listings.user_id <> ${user.id} AND ${submitted.length} = 0
       UNION ALL SELECT listing_id, quantity, unit_price_vnd, seller_id FROM submitted
     ), created AS (
-      INSERT INTO trade_requests (buyer_id, seller_id, buyer_contact_phone)
-      SELECT ${user.id}, seller_id, ${phone} FROM source GROUP BY seller_id
+      INSERT INTO trade_requests (buyer_id, seller_id)
+      SELECT ${user.id}, seller_id FROM source GROUP BY seller_id
       RETURNING id, seller_id
     ), inserted AS (
       INSERT INTO trade_request_items (request_id, listing_id, quantity, unit_price_vnd)

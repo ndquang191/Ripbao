@@ -5,21 +5,21 @@ import { Check, Copy, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useCart } from "@/components/cart-provider";
 import { AccountLink } from "@/components/account-link";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { PageTitle } from "@/components/page-title";
 import { cn } from "@/lib/utils";
 import { formatCurrency, parseCurrency } from "@/lib/currency";
+import { saveGuestTrade } from "@/lib/guest-trades";
 import { useToast } from "@/components/toast";
 
 export default function CartPage() {
-	const { items, count, sessionUser, setSessionUser, updateQuantity, removeItem, clear } = useCart();
+	const { items, count, sessionUser, setSessionUser, updateQuantity, removeItem, clear, saveStatus } = useCart();
 	const [copiedSeller, setCopiedSeller] = useState<string | null>(null);
-	const [sending, setSending] = useState(false);
+	const [sendingSellers, setSendingSellers] = useState<Set<string>>(() => new Set());
 	const toast = useToast();
 	const [guestDialogOpen, setGuestDialogOpen] = useState(false);
-	const [phone, setPhone] = useState("");
 	const [pendingItems, setPendingItems] = useState<typeof items>([]);
 	const [quantityLimitKey, setQuantityLimitKey] = useState<string | null>(null);
 	const quantityLimitTimer = useRef<number | null>(null);
@@ -29,26 +29,69 @@ export default function CartPage() {
 			return result;
 		}, {}),
 	);
-	const sendRequest = async (requestItems: typeof items, contactPhone?: string) => {
-		setSending(true);
+	const sendRequest = async (requestItems: typeof items) => {
+		const seller = requestItems[0]?.seller;
+		const sellerDisplayName = requestItems[0]?.sellerDisplayName || "Người bán";
+		if (!seller) return;
+		setSendingSellers((current) => new Set(current).add(seller));
 		setGuestDialogOpen(false);
-		const response = await fetch("/api/trades", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ items: requestItems, phone: contactPhone }),
-		});
-		const data = (await response.json()) as { error?: string; user?: typeof sessionUser };
-		if (!response.ok) {
-			toast({ title: data.error ?? "Không thể gửi yêu cầu.", variant: "error" });
-			setSending(false);
-			return;
+		try {
+			const response = await fetch("/api/trades", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ items: requestItems }),
+			});
+			const data = await response.json().catch(() => ({})) as { error?: string; ids?: string[]; user?: typeof sessionUser };
+			if (!response.ok) {
+				toast({ title: data.error ?? "Không thể gửi yêu cầu.", variant: "error" });
+				return;
+			}
+			if (data.user?.isGuest === true) {
+				const tradeId = String(data.ids?.[0] ?? `local-${Date.now()}`);
+				const sellerFacebookUrl = requestItems.find((item) => item.sellerFacebookUrl)?.sellerFacebookUrl ?? null;
+				saveGuestTrade({
+					id: tradeId,
+					status: "pending",
+					createdAt: new Date().toISOString(),
+					completedAt: null,
+					buyerContactPhone: null,
+					buyer: data.user?.username ?? "guest",
+					buyerFacebookUrl: null,
+					seller,
+					sellerFacebookUrl,
+					role: "buyer",
+					counterparty: sellerDisplayName,
+					counterpartyUsername: seller,
+					counterpartyFacebookUrl: sellerFacebookUrl,
+					counterpartyIsGuest: false,
+					items: requestItems.map((item, index) => ({
+						id: `${tradeId}:${index}`,
+						cardId: item.cardId,
+						name: item.name,
+						set: item.set,
+						number: Number.parseInt(item.number, 10) || 0,
+						imageUrl: item.imageUrl ?? "",
+						finish: item.finish.toLowerCase() === "foil" ? "foil" : "nonfoil",
+						condition: item.condition,
+						quantity: item.quantity,
+						unitPrice: parseCurrency(item.price) ?? 0,
+						stock: item.stock,
+					})),
+				});
+			}
+			if (data.user) setSessionUser(data.user);
+			requestItems.forEach((item) => removeItem(item.key));
+			setPendingItems([]);
+			toast({ title: `Đã gửi yêu cầu đến ${sellerDisplayName}.`, variant: "success" });
+		} catch {
+			toast({ title: "Không thể kết nối để gửi yêu cầu. Vui lòng thử lại.", variant: "error" });
+		} finally {
+			setSendingSellers((current) => {
+				const next = new Set(current);
+				next.delete(seller);
+				return next;
+			});
 		}
-		if (data.user) setSessionUser(data.user);
-		requestItems.forEach((item) => removeItem(item.key));
-		setPhone("");
-		setPendingItems([]);
-		setSending(false);
-		toast({ title: `Đã gửi yêu cầu đến @${requestItems[0]?.seller}.`, variant: "success" });
 	};
 	const requestFromSeller = (sellerItems: typeof items) => {
 		if (sessionUser && !sessionUser.isGuest) {
@@ -73,9 +116,7 @@ export default function CartPage() {
 						href="/"
 						className="flex items-center gap-3 text-sm font-extrabold tracking-[0.16em]"
 					>
-						<span className="grid h-9 w-8 place-items-center rounded-sm border-2 border-accent bg-primary font-serif text-lg text-accent">
-							R
-						</span>{" "}
+						<BrandLogo />{" "}
 						RIPBAO
 					</Link>
 					<AccountLink />
@@ -86,6 +127,8 @@ export default function CartPage() {
 						<PageTitle icon={ShoppingBag}>Giỏ hàng</PageTitle>
 						<p className="mt-1 text-xs text-muted-foreground">
 							{count} card từ {groups.length} collection
+							{saveStatus === "saving" && " · Đang lưu…"}
+							{saveStatus === "error" && <span className="text-destructive"> · Lưu giỏ hàng thất bại</span>}
 						</p>
 					</div>
 					{items.length > 0 && (
@@ -123,6 +166,7 @@ export default function CartPage() {
 							const sellerFacebookUrl = sellerItems.find(
 								(item) => item.sellerFacebookUrl,
 							)?.sellerFacebookUrl;
+							const sellerDisplayName = sellerItems[0]?.sellerDisplayName || "Người bán";
 							const needsQuote = pricedItems.some(({ unitPrice }) => unitPrice === null);
 							const copyCards = async () => {
 								const lines = sellerItems.map((item) => {
@@ -136,10 +180,10 @@ export default function CartPage() {
 								lines.push(
 									`Tổng: ${formatCurrency(sellerTotal)}${needsQuote ? " + card cần báo giá" : ""}`,
 								);
-								await navigator.clipboard.writeText(`@${seller}\n${lines.join("\n")}`);
+								await navigator.clipboard.writeText(`${sellerDisplayName}\n${lines.join("\n")}`);
 								setCopiedSeller(seller);
 								toast({
-									title: `Đã sao chép danh sách card của @${seller}.`,
+									title: `Đã sao chép danh sách card của ${sellerDisplayName}.`,
 									variant: "success",
 								});
 								window.setTimeout(
@@ -156,7 +200,7 @@ export default function CartPage() {
 												href={`/u/${encodeURIComponent(seller)}`}
 												className="font-bold hover:text-[#5f793f] hover:underline"
 											>
-												@{seller}
+												{sellerDisplayName}
 											</Link>
 											{sellerFacebookUrl && (
 												<a
@@ -164,7 +208,7 @@ export default function CartPage() {
 													target="_blank"
 													rel="noreferrer"
 													className="grid size-6 place-items-center rounded-sm border bg-card text-[10px] font-black text-primary transition-colors hover:bg-secondary"
-													aria-label={`Mở Facebook của @${seller} để nhắn tin`}
+											aria-label={`Mở Facebook của ${sellerDisplayName} để nhắn tin`}
 													title="Mở Facebook để nhắn tin"
 												>
 													f
@@ -289,10 +333,10 @@ export default function CartPage() {
 									</div>
 									<div className="mt-4 flex justify-end">
 										<Button
-											disabled={sending}
+											disabled={sendingSellers.has(seller)}
 											onClick={() => requestFromSeller(sellerItems)}
 										>
-											{sending ? "Đang gửi..." : `Gửi yêu cầu đến @${seller}`}
+											{sendingSellers.has(seller) ? "Đang gửi..." : `Gửi yêu cầu đến ${sellerDisplayName}`}
 										</Button>
 									</div>
 								</section>
@@ -324,41 +368,28 @@ export default function CartPage() {
 							<X className="size-4" />
 						</button>
 						<h2 id="guest-contact-title" className="pr-8 font-serif text-lg font-semibold">
-							Gửi yêu cầu đến @{pendingItems[0]?.seller}
+							Gửi yêu cầu đến {pendingItems[0]?.sellerDisplayName || "người bán"}
 						</h2>
 						<p className="mt-2 text-xs leading-5 text-muted-foreground">
-							Người bán sẽ không thể chủ động liên lạc với bạn. Bạn có muốn gửi kèm SĐT để người
-							bán có thể chủ động liên lạc với bạn không?
+							Bạn có muốn tạo tài khoản để theo dõi và quản lý các yêu cầu mua dễ dàng hơn không?
+							Nếu tiếp tục với tư cách khách, bạn sẽ cần chủ động liên lạc với người bán.
 						</p>
-						<label className="mt-4 block text-xs font-bold" htmlFor="guest-phone">
-							Số điện thoại
-							<Input
-								id="guest-phone"
-								type="tel"
-								inputMode="tel"
-								autoFocus
-								value={phone}
-								onChange={(event) => setPhone(event.target.value)}
-								placeholder="Ví dụ: 0912 345 678"
-								className="mt-2"
-							/>
-						</label>
 						<div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 							<Button
 								type="button"
 								variant="outline"
-								disabled={sending}
+								disabled={sendingSellers.has(pendingItems[0]?.seller ?? "")}
 								onClick={() => void sendRequest(pendingItems)}
 							>
 								Tôi sẽ chủ động liên lạc
 							</Button>
-							<Button
-								type="button"
-								disabled={sending || phone.replace(/\D/g, "").length < 9}
-								onClick={() => void sendRequest(pendingItems, phone)}
+							<Link
+								href="/register?next=/cart"
+								className={buttonVariants()}
+								onClick={() => setGuestDialogOpen(false)}
 							>
-								Xác nhận gửi kèm SĐT
-							</Button>
+								Tạo tài khoản
+							</Link>
 						</div>
 					</Card>
 				</div>
