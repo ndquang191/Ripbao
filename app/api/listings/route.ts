@@ -2,11 +2,17 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 
-type ListingInput = { cardId?: string; quantity?: number; minPrice?: number; tcgMultiplier?: number };
+type ListingInput = {
+  cardId?: string;
+  quantity?: number;
+  minPrice?: number;
+  tcgMultiplier?: number;
+};
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
   const sql = getDb();
   const items = await sql`
     SELECT listings.card_id AS "cardId", listings.quantity,
@@ -30,14 +36,19 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
-  const body = await request.json().catch(() => null) as { items?: ListingInput[] } | null;
-  const items = (body?.items ?? []).map((item) => ({
-    card_id: String(item.cardId ?? ""),
-    quantity: Math.max(0, Math.floor(Number(item.quantity) || 0)),
-    min_price_vnd: Math.max(0, Math.round(Number(item.minPrice) || 0)),
-    tcg_multiplier: Math.max(0, Number(item.tcgMultiplier) || 0.9),
-  })).filter((item) => item.card_id && item.quantity > 0);
+  if (!user)
+    return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
+  const body = (await request.json().catch(() => null)) as {
+    items?: ListingInput[];
+  } | null;
+  const items = (body?.items ?? [])
+    .map((item) => ({
+      card_id: String(item.cardId ?? ""),
+      quantity: Math.max(0, Math.floor(Number(item.quantity) || 0)),
+      min_price_vnd: Math.max(0, Math.round(Number(item.minPrice) || 0)),
+      tcg_multiplier: Math.max(0, Number(item.tcgMultiplier) || 0.9),
+    }))
+    .filter((item) => item.card_id && item.quantity > 0);
   const sql = getDb();
   const payload = JSON.stringify(items);
   await sql.transaction((tx) => [

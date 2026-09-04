@@ -107,10 +107,15 @@ function toCard(card: ApiCard): RiftboundCard {
   };
 }
 
-export async function getCards(options: GetCardsOptions = {}): Promise<CardPage> {
+export async function getCards(
+  options: GetCardsOptions = {},
+): Promise<CardPage> {
   const page = Math.max(1, options.page ?? 1);
   const size = Math.min(100, Math.max(1, options.size ?? 50));
-  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  const params = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+  });
   const name = options.name?.trim();
   const path = name ? "/cards/name" : "/cards";
 
@@ -122,13 +127,20 @@ export async function getCards(options: GetCardsOptions = {}): Promise<CardPage>
   return {
     ...result,
     items: result.items
-      .filter((card) => card.classification.type.toLowerCase() !== "battlefield")
+      .filter(
+        (card) => card.classification.type.toLowerCase() !== "battlefield",
+      )
       .map(toCard),
   };
 }
 
 export async function getAllCards(): Promise<RiftboundCard[]> {
-  const firstPage = await getCards({ page: 1, size: 100, sort: "name", direction: 1 });
+  const firstPage = await getCards({
+    page: 1,
+    size: 100,
+    sort: "name",
+    direction: 1,
+  });
   const remainingPages = await Promise.all(
     Array.from({ length: Math.max(0, firstPage.pages - 1) }, (_, index) =>
       getCards({ page: index + 2, size: 100, sort: "name", direction: 1 }),
@@ -137,7 +149,9 @@ export async function getAllCards(): Promise<RiftboundCard[]> {
 
   return [firstPage, ...remainingPages]
     .flatMap((page) => page.items)
-    .sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+    .sort((a, b) =>
+      a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
+    );
 }
 
 export function getCardFilters(): CardFilters {

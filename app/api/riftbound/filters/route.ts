@@ -6,7 +6,8 @@ export async function GET() {
     return NextResponse.json(await getCardFilters());
   } catch (error) {
     const status = error instanceof RiftboundApiError ? error.status : 502;
-    const message = error instanceof Error ? error.message : "Unable to load card filters";
+    const message =
+      error instanceof Error ? error.message : "Unable to load card filters";
     return NextResponse.json({ error: message }, { status });
   }
 }

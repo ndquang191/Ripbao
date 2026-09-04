@@ -36,7 +36,9 @@ async function getPage(page: number): Promise<ApiPage> {
   );
 
   if (!response.ok) {
-    throw new Error(`RiftCodex returned ${response.status} ${response.statusText}`);
+    throw new Error(
+      `RiftCodex returned ${response.status} ${response.statusText}`,
+    );
   }
 
   return response.json() as Promise<ApiPage>;
@@ -59,7 +61,7 @@ for (let start = 2; start <= firstPage.pages; start += 5) {
     { length: Math.min(5, firstPage.pages - start + 1) },
     (_, index) => start + index,
   );
-  remainingPages.push(...await Promise.all(pageNumbers.map(getPage)));
+  remainingPages.push(...(await Promise.all(pageNumbers.map(getPage))));
 }
 
 const sourceCards = [firstPage, ...remainingPages]
@@ -67,27 +69,29 @@ const sourceCards = [firstPage, ...remainingPages]
   .filter((card) => card.classification.type.toLowerCase() !== "battlefield");
 
 const uniqueCards = new Map<string, ApiCard>();
-for (const card of sourceCards.sort((left, right) => left.id.localeCompare(right.id))) {
-  if (!uniqueCards.has(card.riftbound_id)) uniqueCards.set(card.riftbound_id, card);
+for (const card of sourceCards.sort((left, right) =>
+  left.id.localeCompare(right.id),
+)) {
+  if (!uniqueCards.has(card.riftbound_id))
+    uniqueCards.set(card.riftbound_id, card);
 }
 
-const cards = [...uniqueCards.values()]
-  .map((card) => ({
-    id: card.id,
-    riftbound_id: card.riftbound_id,
-    tcgplayer_id: card.tcgplayer_id,
-    name: card.name,
-    search_name: normalizeSearchName(card.name),
-    collector_number: card.collector_number,
-    set_id: card.set.set_id,
-    set_name: card.set.label,
-    type: card.classification.type,
-    supertype: card.classification.supertype,
-    rarity: card.classification.rarity,
-    domains: card.classification.domain,
-    image_url: card.media.image_url,
-    source_updated_at: card.metadata.updated_on ?? null,
-  }));
+const cards = [...uniqueCards.values()].map((card) => ({
+  id: card.id,
+  riftbound_id: card.riftbound_id,
+  tcgplayer_id: card.tcgplayer_id,
+  name: card.name,
+  search_name: normalizeSearchName(card.name),
+  collector_number: card.collector_number,
+  set_id: card.set.set_id,
+  set_name: card.set.label,
+  type: card.classification.type,
+  supertype: card.classification.supertype,
+  rarity: card.classification.rarity,
+  domains: card.classification.domain,
+  image_url: card.media.image_url,
+  source_updated_at: card.metadata.updated_on ?? null,
+}));
 
 const sql = neon(connectionString);
 const payload = JSON.stringify(cards);
@@ -130,6 +134,6 @@ await sql.transaction((tx) => [
 ]);
 
 console.log(
-  `Synced ${cards.length} unique Riftbound cards `
-  + `(${sourceCards.length} non-Battlefield records from ${firstPage.total} total)`,
+  `Synced ${cards.length} unique Riftbound cards ` +
+    `(${sourceCards.length} non-Battlefield records from ${firstPage.total} total)`,
 );

@@ -4,11 +4,19 @@ import { getDb } from "@/lib/db";
 
 type ItemInput = { id?: string | number; quantity?: number };
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
   const { id } = await params;
-  if (!/^\d+$/.test(id)) return NextResponse.json({ error: "Giao dịch không hợp lệ." }, { status: 400 });
+  if (!/^\d+$/.test(id))
+    return NextResponse.json(
+      { error: "Giao dịch không hợp lệ." },
+      { status: 400 },
+    );
 
   const sql = getDb();
   const result = await sql`
@@ -20,21 +28,45 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
       AND (buyer_id = ${user.id} OR seller_id = ${user.id})
     RETURNING id
   `;
-  if (!result[0]) return NextResponse.json({ error: "Chỉ có thể ẩn giao dịch đã hoàn thành." }, { status: 409 });
+  if (!result[0])
+    return NextResponse.json(
+      { error: "Chỉ có thể ẩn giao dịch đã hoàn thành." },
+      { status: 409 },
+    );
   return NextResponse.json({ hidden: true });
 }
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
   const { id } = await params;
-  if (!/^\d+$/.test(id)) return NextResponse.json({ error: "Yêu cầu không hợp lệ." }, { status: 400 });
-  const body = await request.json().catch(() => null) as { action?: string; items?: ItemInput[] } | null;
+  if (!/^\d+$/.test(id))
+    return NextResponse.json(
+      { error: "Yêu cầu không hợp lệ." },
+      { status: 400 },
+    );
+  const body = (await request.json().catch(() => null)) as {
+    action?: string;
+    items?: ItemInput[];
+  } | null;
   const sql = getDb();
 
   if (body?.action === "update") {
-    const items = (body.items ?? []).map((item) => ({ id: String(item.id ?? ""), quantity: Math.floor(Number(item.quantity) || 0) })).filter((item) => /^\d+$/.test(item.id) && item.quantity > 0);
-    if (items.length === 0) return NextResponse.json({ error: "Đơn cần có ít nhất một card." }, { status: 400 });
+    const items = (body.items ?? [])
+      .map((item) => ({
+        id: String(item.id ?? ""),
+        quantity: Math.floor(Number(item.quantity) || 0),
+      }))
+      .filter((item) => /^\d+$/.test(item.id) && item.quantity > 0);
+    if (items.length === 0)
+      return NextResponse.json(
+        { error: "Đơn cần có ít nhất một card." },
+        { status: 400 },
+      );
     const result = await sql`
       WITH allowed AS (
         SELECT id FROM trade_requests WHERE id = ${id} AND seller_id = ${user.id} AND status = 'pending'
@@ -50,7 +82,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       UPDATE trade_requests SET updated_at = now() WHERE id IN (SELECT id FROM allowed)
       RETURNING (SELECT count(*) FROM updated)::integer AS count
     `;
-    if (!result[0]) return NextResponse.json({ error: "Bạn không thể sửa yêu cầu này." }, { status: 403 });
+    if (!result[0])
+      return NextResponse.json(
+        { error: "Bạn không thể sửa yêu cầu này." },
+        { status: 403 },
+      );
     return NextResponse.json({ updated: Number(result[0].count) });
   }
 
@@ -73,8 +109,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       )
       SELECT id, (SELECT count(*) FROM stock)::integer AS "updatedListings" FROM completed
     `;
-    if (!result[0]) return NextResponse.json({ error: "Tồn kho không đủ hoặc giao dịch đã được xử lý." }, { status: 409 });
-    return NextResponse.json({ completed: true, updatedListings: Number(result[0].updatedListings) });
+    if (!result[0])
+      return NextResponse.json(
+        { error: "Tồn kho không đủ hoặc giao dịch đã được xử lý." },
+        { status: 409 },
+      );
+    return NextResponse.json({
+      completed: true,
+      updatedListings: Number(result[0].updatedListings),
+    });
   }
 
   if (body?.action === "cancel") {
@@ -83,9 +126,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       WHERE id = ${id} AND status = 'pending' AND (seller_id = ${user.id} OR buyer_id = ${user.id})
       RETURNING id
     `;
-    if (!result[0]) return NextResponse.json({ error: "Không thể huỷ yêu cầu này." }, { status: 409 });
+    if (!result[0])
+      return NextResponse.json(
+        { error: "Không thể huỷ yêu cầu này." },
+        { status: 409 },
+      );
     return NextResponse.json({ cancelled: true });
   }
 
-  return NextResponse.json({ error: "Thao tác không hợp lệ." }, { status: 400 });
+  return NextResponse.json(
+    { error: "Thao tác không hợp lệ." },
+    { status: 400 },
+  );
 }

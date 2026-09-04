@@ -18,14 +18,14 @@ Tài liệu này lưu các API và response mẫu để phân tích, tổng kế
 
 #### Query parameters
 
-| Tên | Vị trí | Giá trị mẫu | Ghi chú |
-| --- | --- | --- | --- |
-| `page` | query | `1` | Trang hiện tại |
-| `size` | query | `50` | Số bản ghi mỗi trang; từ `1` đến `100` |
-| `dir` | query | `1` | `1`: tăng dần; `-1`: giảm dần |
-| `sort` | query | — | Trường dùng để sắp xếp |
-| `set_id` | query | — | Lọc theo Riftbound set ID, không phân biệt hoa thường |
-| `new` | query | `true` | Lọc theo trạng thái thẻ mới |
+| Tên      | Vị trí | Giá trị mẫu | Ghi chú                                               |
+| -------- | ------ | ----------- | ----------------------------------------------------- |
+| `page`   | query  | `1`         | Trang hiện tại                                        |
+| `size`   | query  | `50`        | Số bản ghi mỗi trang; từ `1` đến `100`                |
+| `dir`    | query  | `1`         | `1`: tăng dần; `-1`: giảm dần                         |
+| `sort`   | query  | —           | Trường dùng để sắp xếp                                |
+| `set_id` | query  | —           | Lọc theo Riftbound set ID, không phân biệt hoa thường |
+| `new`    | query  | `true`      | Lọc theo trạng thái thẻ mới                           |
 
 #### Request mẫu
 
@@ -108,15 +108,15 @@ Response gốc có 2 phần tử. Ví dụ trên giữ một phần tử đại 
 
 #### Query parameters
 
-| Tên | Kiểu | Bắt buộc | Mặc định / giới hạn | Mô tả |
-| --- | --- | --- | --- | --- |
-| `query` | string | Có | — | Chuỗi tìm kiếm toàn văn trên nội dung thẻ |
-| `sort` | `CardSortCategories` | Không | — | Trường sắp xếp, ví dụ: `name`, `collector_number`, `set_id` |
-| `dir` | integer | Không | `1` | Hướng sắp xếp: `1` tăng dần, `-1` giảm dần |
-| `set_id` | string | Không | — | Riftbound set ID, ví dụ `sfd`, `ogn`; không phân biệt hoa thường |
-| `new` | boolean | Không | — | `true` để chỉ lấy các thẻ mới |
-| `page` | integer | Không | Mặc định `1`, nhỏ nhất `1` | Trang hiện tại |
-| `size` | integer | Không | Mặc định `50`, từ `1` đến `100` | Số bản ghi mỗi trang |
+| Tên      | Kiểu                 | Bắt buộc | Mặc định / giới hạn             | Mô tả                                                            |
+| -------- | -------------------- | -------- | ------------------------------- | ---------------------------------------------------------------- |
+| `query`  | string               | Có       | —                               | Chuỗi tìm kiếm toàn văn trên nội dung thẻ                        |
+| `sort`   | `CardSortCategories` | Không    | —                               | Trường sắp xếp, ví dụ: `name`, `collector_number`, `set_id`      |
+| `dir`    | integer              | Không    | `1`                             | Hướng sắp xếp: `1` tăng dần, `-1` giảm dần                       |
+| `set_id` | string               | Không    | —                               | Riftbound set ID, ví dụ `sfd`, `ogn`; không phân biệt hoa thường |
+| `new`    | boolean              | Không    | —                               | `true` để chỉ lấy các thẻ mới                                    |
+| `page`   | integer              | Không    | Mặc định `1`, nhỏ nhất `1`      | Trang hiện tại                                                   |
+| `size`   | integer              | Không    | Mặc định `50`, từ `1` đến `100` | Số bản ghi mỗi trang                                             |
 
 #### Request mẫu
 
@@ -182,16 +182,16 @@ Response gốc có đủ 8 set. Ba phần tử đại diện trên thể hiện 
 
 #### Query parameters
 
-| Tên | Kiểu | Bắt buộc | Mặc định / giới hạn | Mô tả |
-| --- | --- | --- | --- | --- |
-| `exact` | string | Không | — | Tìm tên khớp chính xác, không phân biệt hoa thường |
-| `fuzzy` | string | Không | — | Tìm tên gần đúng, không phân biệt hoa thường |
-| `sort` | `CardSortCategories` | Không | — | Trường sắp xếp, ví dụ: `name`, `collector_number`, `set_id` |
-| `dir` | integer | Không | `1` | Hướng sắp xếp: `1` tăng dần, `-1` giảm dần |
-| `set_id` | string | Không | — | Riftbound set ID, ví dụ `sfd`, `ogn`; không phân biệt hoa thường |
-| `new` | boolean | Không | — | `true` để chỉ lấy các thẻ mới |
-| `page` | integer | Không | Mặc định `1`, nhỏ nhất `1` | Trang hiện tại |
-| `size` | integer | Không | Mặc định `50`, từ `1` đến `100` | Số bản ghi mỗi trang |
+| Tên      | Kiểu                 | Bắt buộc | Mặc định / giới hạn             | Mô tả                                                            |
+| -------- | -------------------- | -------- | ------------------------------- | ---------------------------------------------------------------- |
+| `exact`  | string               | Không    | —                               | Tìm tên khớp chính xác, không phân biệt hoa thường               |
+| `fuzzy`  | string               | Không    | —                               | Tìm tên gần đúng, không phân biệt hoa thường                     |
+| `sort`   | `CardSortCategories` | Không    | —                               | Trường sắp xếp, ví dụ: `name`, `collector_number`, `set_id`      |
+| `dir`    | integer              | Không    | `1`                             | Hướng sắp xếp: `1` tăng dần, `-1` giảm dần                       |
+| `set_id` | string               | Không    | —                               | Riftbound set ID, ví dụ `sfd`, `ogn`; không phân biệt hoa thường |
+| `new`    | boolean              | Không    | —                               | `true` để chỉ lấy các thẻ mới                                    |
+| `page`   | integer              | Không    | Mặc định `1`, nhỏ nhất `1`      | Trang hiện tại                                                   |
+| `size`   | integer              | Không    | Mặc định `50`, từ `1` đến `100` | Số bản ghi mỗi trang                                             |
 
 #### Request mẫu
 
@@ -282,9 +282,9 @@ GET https://api.riftcodex.com/cards/name?fuzzy=yi+hone&size=2
 
 #### Path parameters
 
-| Tên | Kiểu | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `id` | string | Có | Riftcodex ID của thẻ |
+| Tên  | Kiểu   | Bắt buộc | Mô tả                |
+| ---- | ------ | -------- | -------------------- |
+| `id` | string | Có       | Riftcodex ID của thẻ |
 
 #### Request mẫu
 
@@ -309,9 +309,9 @@ _Chưa được cung cấp._
 
 #### Path parameters
 
-| Tên | Kiểu | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `id` | string | Có | Riftbound ID đầy đủ hoặc một phần, ví dụ `ogn-011-298` hoặc `ogn-011` |
+| Tên  | Kiểu   | Bắt buộc | Mô tả                                                                 |
+| ---- | ------ | -------- | --------------------------------------------------------------------- |
+| `id` | string | Có       | Riftbound ID đầy đủ hoặc một phần, ví dụ `ogn-011-298` hoặc `ogn-011` |
 
 #### Request mẫu
 
@@ -337,9 +337,9 @@ _Chưa được cung cấp._
 
 #### Path parameters
 
-| Tên | Kiểu | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `tcgplayer_id` | string | Có | TCGPlayer ID / TCGPlayer `productID` của thẻ |
+| Tên            | Kiểu   | Bắt buộc | Mô tả                                        |
+| -------------- | ------ | -------- | -------------------------------------------- |
+| `tcgplayer_id` | string | Có       | TCGPlayer ID / TCGPlayer `productID` của thẻ |
 
 #### Request mẫu
 
@@ -363,10 +363,10 @@ _Chưa được cung cấp._
 
 #### Query parameters
 
-| Tên | Kiểu | Bắt buộc | Mặc định / giới hạn | Mô tả |
-| --- | --- | --- | --- | --- |
-| `page` | integer | Không | Mặc định `1`, nhỏ nhất `1` | Trang hiện tại |
-| `size` | integer | Không | Mặc định `50`, từ `1` đến `100` | Số bản ghi mỗi trang |
+| Tên    | Kiểu    | Bắt buộc | Mặc định / giới hạn             | Mô tả                |
+| ------ | ------- | -------- | ------------------------------- | -------------------- |
+| `page` | integer | Không    | Mặc định `1`, nhỏ nhất `1`      | Trang hiện tại       |
+| `size` | integer | Không    | Mặc định `50`, từ `1` đến `100` | Số bản ghi mỗi trang |
 
 #### Request mẫu
 
@@ -391,9 +391,9 @@ _Chưa được cung cấp._
 
 #### Path parameters
 
-| Tên | Kiểu | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `set_id` | string | Có | Riftbound set ID, ví dụ `sfd`, `ogn` |
+| Tên      | Kiểu   | Bắt buộc | Mô tả                                |
+| -------- | ------ | -------- | ------------------------------------ |
+| `set_id` | string | Có       | Riftbound set ID, ví dụ `sfd`, `ogn` |
 
 #### Request mẫu
 
@@ -436,9 +436,9 @@ Status: `200 OK`
 
 #### Path parameters
 
-| Tên | Kiểu | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `tcgplayer_id` | string | Có | TCGPlayer ID / TCGPlayer `groupID` của set |
+| Tên            | Kiểu   | Bắt buộc | Mô tả                                      |
+| -------------- | ------ | -------- | ------------------------------------------ |
+| `tcgplayer_id` | string | Có       | TCGPlayer ID / TCGPlayer `groupID` của set |
 
 #### Request mẫu
 
@@ -472,9 +472,9 @@ Status: `200 OK`
 
 #### Path parameters
 
-| Tên | Kiểu | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `id` | string | Có | Riftcodex ID của set |
+| Tên  | Kiểu   | Bắt buộc | Mô tả                |
+| ---- | ------ | -------- | -------------------- |
+| `id` | string | Có       | Riftcodex ID của set |
 
 #### Request mẫu từ tài liệu
 
@@ -561,17 +561,17 @@ Tất cả endpoint dưới đây:
 - Trả về status `200 OK` khi thành công.
 - Có response theo schema `Index`.
 
-| STT | Endpoint | Nội dung `values` |
-| --- | --- | --- |
-| 13 | `/index/card-types` | Các loại thẻ có trong database |
-| 14 | `/index/card-supertypes` | Các supertype của thẻ |
-| 15 | `/index/domains` | Các domain của thẻ |
-| 16 | `/index/rarities` | Các độ hiếm của thẻ |
-| 17 | `/index/artists` | Các họa sĩ của thẻ |
-| 18 | `/index/energy` | Các giá trị energy có thể có |
-| 19 | `/index/might` | Các giá trị might có thể có |
-| 20 | `/index/power` | Các giá trị power có thể có |
-| 21 | `/index/tags` | Tất cả tag duy nhất của thẻ |
+| STT | Endpoint                 | Nội dung `values`              |
+| --- | ------------------------ | ------------------------------ |
+| 13  | `/index/card-types`      | Các loại thẻ có trong database |
+| 14  | `/index/card-supertypes` | Các supertype của thẻ          |
+| 15  | `/index/domains`         | Các domain của thẻ             |
+| 16  | `/index/rarities`        | Các độ hiếm của thẻ            |
+| 17  | `/index/artists`         | Các họa sĩ của thẻ             |
+| 18  | `/index/energy`          | Các giá trị energy có thể có   |
+| 19  | `/index/might`           | Các giá trị might có thể có    |
+| 20  | `/index/power`           | Các giá trị power có thể có    |
+| 21  | `/index/tags`            | Tất cả tag duy nhất của thẻ    |
 
 #### Request mẫu
 
@@ -597,14 +597,7 @@ Status: `200 OK`
 {
   "total": 6,
   "type": "card_types",
-  "values": [
-    "Battlefield",
-    "Gear",
-    "Legend",
-    "Rune",
-    "Spell",
-    "Unit"
-  ]
+  "values": ["Battlefield", "Gear", "Legend", "Rune", "Spell", "Unit"]
 }
 ```
 
@@ -616,12 +609,7 @@ Status: `200 OK`
 {
   "total": 4,
   "type": "card_supertypes",
-  "values": [
-    "Basic",
-    "Champion",
-    "Signature",
-    "Token"
-  ]
+  "values": ["Basic", "Champion", "Signature", "Token"]
 }
 ```
 
@@ -635,14 +623,7 @@ Status: `200 OK`
 {
   "total": 6,
   "type": "rarities",
-  "values": [
-    "Common",
-    "Epic",
-    "Promo",
-    "Rare",
-    "Showcase",
-    "Uncommon"
-  ]
+  "values": ["Common", "Epic", "Promo", "Rare", "Showcase", "Uncommon"]
 }
 ```
 
@@ -654,15 +635,7 @@ Status: `200 OK`
 {
   "total": 7,
   "type": "domains",
-  "values": [
-    "Body",
-    "Calm",
-    "Chaos",
-    "Colorless",
-    "Fury",
-    "Mind",
-    "Order"
-  ]
+  "values": ["Body", "Calm", "Chaos", "Colorless", "Fury", "Mind", "Order"]
 }
 ```
 
@@ -676,22 +649,22 @@ Status: `200 OK`
 
 ### Card
 
-| Field | Type | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `id` | string | Có | Định danh Riftcodex duy nhất của thẻ |
-| `name` | string | Có | Tên thẻ |
-| `riftbound_id` | string | Có | Riftbound ID của thẻ |
-| `tcgplayer_id` | string | Có | TCGPlayer ID, còn được gọi là `productID` |
-| `collector_number` | integer | Có | Số thứ tự của thẻ trong set |
-| `attributes` | `Attributes` | Có | Thuộc tính thẻ, ví dụ energy cost, might, power |
-| `classification` | `Classification` | Có | Phân loại thẻ, ví dụ type, supertype, rarity, domain |
-| `text` | `Text` | Có | Nội dung thẻ, gồm rich text, plain text và flavour text |
-| `set` | `CardSet` | Có | Thông tin set, gồm set ID và label |
-| `media` | `Media` | Có | Thông tin media, gồm URL ảnh, họa sĩ và accessibility text |
-| `tags` | string[] | Có | Các tag liên quan, ví dụ `Freljord`, `Noxus` |
-| `orientation` | string | Có | Hướng thẻ: `portrait` hoặc `landscape` |
-| `metadata` | `Metadata` | Có | Metadata của thẻ |
-| `new` | boolean | Không | Trạng thái thẻ mới |
+| Field              | Type             | Bắt buộc | Mô tả                                                      |
+| ------------------ | ---------------- | -------- | ---------------------------------------------------------- |
+| `id`               | string           | Có       | Định danh Riftcodex duy nhất của thẻ                       |
+| `name`             | string           | Có       | Tên thẻ                                                    |
+| `riftbound_id`     | string           | Có       | Riftbound ID của thẻ                                       |
+| `tcgplayer_id`     | string           | Có       | TCGPlayer ID, còn được gọi là `productID`                  |
+| `collector_number` | integer          | Có       | Số thứ tự của thẻ trong set                                |
+| `attributes`       | `Attributes`     | Có       | Thuộc tính thẻ, ví dụ energy cost, might, power            |
+| `classification`   | `Classification` | Có       | Phân loại thẻ, ví dụ type, supertype, rarity, domain       |
+| `text`             | `Text`           | Có       | Nội dung thẻ, gồm rich text, plain text và flavour text    |
+| `set`              | `CardSet`        | Có       | Thông tin set, gồm set ID và label                         |
+| `media`            | `Media`          | Có       | Thông tin media, gồm URL ảnh, họa sĩ và accessibility text |
+| `tags`             | string[]         | Có       | Các tag liên quan, ví dụ `Freljord`, `Noxus`               |
+| `orientation`      | string           | Có       | Hướng thẻ: `portrait` hoặc `landscape`                     |
+| `metadata`         | `Metadata`       | Có       | Metadata của thẻ                                           |
+| `new`              | boolean          | Không    | Trạng thái thẻ mới                                         |
 
 #### Ngữ nghĩa bộ lọc `new`
 
@@ -705,13 +678,13 @@ Trường này hữu ích trong giai đoạn phát hành set mới.
 
 Schema đã được xác nhận từ `GET /cards?page=1&size=2`:
 
-| Field | Type | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `items` | `Card[]` | Có | Danh sách card của trang hiện tại |
-| `total` | integer | Có | Tổng số card khớp request |
-| `page` | integer | Có | Trang hiện tại, bắt đầu từ `1` |
-| `size` | integer | Có | Page size được yêu cầu |
-| `pages` | integer | Có | Tổng số trang |
+| Field   | Type     | Bắt buộc | Mô tả                             |
+| ------- | -------- | -------- | --------------------------------- |
+| `items` | `Card[]` | Có       | Danh sách card của trang hiện tại |
+| `total` | integer  | Có       | Tổng số card khớp request         |
+| `page`  | integer  | Có       | Trang hiện tại, bắt đầu từ `1`    |
+| `size`  | integer  | Có       | Page size được yêu cầu            |
+| `pages` | integer  | Có       | Tổng số trang                     |
 
 Với `total=1451` và `size=2`, API trả `pages=726`, tương ứng `ceil(total / size)`.
 
@@ -719,87 +692,87 @@ Với `total=1451` và `size=2`, API trả `pages=726`, tương ứng `ceil(tota
 
 Schema suy ra từ các response mẫu của `/sets/set-id/{set_id}`, `/sets/tcgplayer/{tcgplayer_id}` và `/sets/{id}`:
 
-| Field | Type | Quan sát |
-| --- | --- | --- |
-| `id` | string | Riftcodex ID duy nhất của set |
-| `set_id` | string | Riftbound set ID; response mẫu dùng chữ hoa |
-| `name` | string | Tên đầy đủ của set |
-| `card_count` | integer | Tổng số thẻ trong set |
-| `published_on` | string | Ngày giờ phát hành theo ISO 8601 |
-| `tcgplayer_id` | string \| null | TCGPlayer `groupID`; `null` khi chưa có ánh xạ |
+| Field           | Type                       | Quan sát                                        |
+| --------------- | -------------------------- | ----------------------------------------------- |
+| `id`            | string                     | Riftcodex ID duy nhất của set                   |
+| `set_id`        | string                     | Riftbound set ID; response mẫu dùng chữ hoa     |
+| `name`          | string                     | Tên đầy đủ của set                              |
+| `card_count`    | integer                    | Tổng số thẻ trong set                           |
+| `published_on`  | string                     | Ngày giờ phát hành theo ISO 8601                |
+| `tcgplayer_id`  | string \| null             | TCGPlayer `groupID`; `null` khi chưa có ánh xạ  |
 | `cardmarket_id` | string \| string[] \| null | Một ID, nhiều ID hoặc `null` khi chưa có ánh xạ |
 
 ### PaginatedSets
 
 Schema đã được xác nhận từ `GET /sets?page=1&size=10`:
 
-| Field | Type | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `items` | `Set[]` | Có | Danh sách set của trang hiện tại |
-| `total` | integer | Có | Tổng số set; response đã kiểm tra trả `8` |
-| `page` | integer | Có | Trang hiện tại, bắt đầu từ `1` |
-| `size` | integer | Có | Page size được yêu cầu, kể cả khi lớn hơn số item thực tế |
-| `pages` | integer | Có | Tổng số trang |
+| Field   | Type    | Bắt buộc | Mô tả                                                     |
+| ------- | ------- | -------- | --------------------------------------------------------- |
+| `items` | `Set[]` | Có       | Danh sách set của trang hiện tại                          |
+| `total` | integer | Có       | Tổng số set; response đã kiểm tra trả `8`                 |
+| `page`  | integer | Có       | Trang hiện tại, bắt đầu từ `1`                            |
+| `size`  | integer | Có       | Page size được yêu cầu, kể cả khi lớn hơn số item thực tế |
+| `pages` | integer | Có       | Tổng số trang                                             |
 
 ### Index
 
-| Field | Type | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `total` | integer | Có | Tổng số giá trị duy nhất của loại index |
-| `type` | string | Có | Loại index, ví dụ `keywords`, `sets`, `types` |
-| `values` | (string \| integer)[] | Có | Danh sách các giá trị duy nhất của index |
+| Field    | Type                  | Bắt buộc | Mô tả                                         |
+| -------- | --------------------- | -------- | --------------------------------------------- |
+| `total`  | integer               | Có       | Tổng số giá trị duy nhất của loại index       |
+| `type`   | string                | Có       | Loại index, ví dụ `keywords`, `sets`, `types` |
+| `values` | (string \| integer)[] | Có       | Danh sách các giá trị duy nhất của index      |
 
 `values` có thể là mảng chuỗi hoặc mảng số tùy endpoint. Các index `energy`, `might`, `power` dự kiến dùng số; cần đối chiếu response thực tế.
 
 ### Attributes
 
-| Field | Type | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
+| Field    | Type            | Bắt buộc                      | Mô tả                                         |
+| -------- | --------------- | ----------------------------- | --------------------------------------------- |
 | `energy` | integer \| null | Có trong response đã kiểm tra | Energy cost của thẻ; `null` nếu không áp dụng |
-| `might` | integer \| null | Có trong response đã kiểm tra | Might của thẻ; `null` nếu không áp dụng |
-| `power` | integer \| null | Có trong response đã kiểm tra | Power của thẻ; `null` nếu không áp dụng |
+| `might`  | integer \| null | Có trong response đã kiểm tra | Might của thẻ; `null` nếu không áp dụng       |
+| `power`  | integer \| null | Có trong response đã kiểm tra | Power của thẻ; `null` nếu không áp dụng       |
 
 ### Classification
 
-| Field | Type | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `type` | string | Có | Loại thẻ, ví dụ `Unit`, `Spell` |
+| Field       | Type           | Bắt buộc                      | Mô tả                                                                |
+| ----------- | -------------- | ----------------------------- | -------------------------------------------------------------------- |
+| `type`      | string         | Có                            | Loại thẻ, ví dụ `Unit`, `Spell`                                      |
 | `supertype` | string \| null | Có trong response đã kiểm tra | Supertype; `null` nếu không áp dụng, ví dụ khác: `Champion`, `Token` |
-| `rarity` | string | Có | Độ hiếm, ví dụ `Common`, `Rare` |
-| `domain` | string[] | Có | Một hoặc nhiều domain, ví dụ `Fury`, `Chaos` |
+| `rarity`    | string         | Có                            | Độ hiếm, ví dụ `Common`, `Rare`                                      |
+| `domain`    | string[]       | Có                            | Một hoặc nhiều domain, ví dụ `Fury`, `Chaos`                         |
 
 ### Text
 
-| Field | Type | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `rich` | string | Có | Nội dung thẻ có rich formatting |
-| `plain` | string | Có | Nội dung thẻ dạng plain text |
+| Field     | Type           | Bắt buộc                      | Mô tả                             |
+| --------- | -------------- | ----------------------------- | --------------------------------- |
+| `rich`    | string         | Có                            | Nội dung thẻ có rich formatting   |
+| `plain`   | string         | Có                            | Nội dung thẻ dạng plain text      |
 | `flavour` | string \| null | Có trong response đã kiểm tra | Flavour text; `null` nếu không có |
 
 ### CardSet
 
-| Field | Type | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `set_id` | string | Có | Định danh duy nhất của set, ví dụ `OGN`, `OGS` |
-| `label` | string | Có | Tên hiển thị của set, ví dụ `Origins`, `Spiritforged` |
+| Field    | Type   | Bắt buộc | Mô tả                                                 |
+| -------- | ------ | -------- | ----------------------------------------------------- |
+| `set_id` | string | Có       | Định danh duy nhất của set, ví dụ `OGN`, `OGS`        |
+| `label`  | string | Có       | Tên hiển thị của set, ví dụ `Origins`, `Spiritforged` |
 
 ### Media
 
-| Field | Type | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `image_url` | string | Có | URL ảnh thẻ |
-| `artist` | string | Có | Tên họa sĩ |
-| `accessibility_text` | string | Có | Nội dung hỗ trợ khả năng tiếp cận của thẻ |
+| Field                | Type   | Bắt buộc | Mô tả                                     |
+| -------------------- | ------ | -------- | ----------------------------------------- |
+| `image_url`          | string | Có       | URL ảnh thẻ                               |
+| `artist`             | string | Có       | Tên họa sĩ                                |
+| `accessibility_text` | string | Có       | Nội dung hỗ trợ khả năng tiếp cận của thẻ |
 
 ### Metadata
 
-| Field | Type | Bắt buộc | Mô tả |
-| --- | --- | --- | --- |
-| `clean_name` | string | Có | Tên thẻ đã loại bỏ ký tự đặc biệt |
-| `updated_on` | string | Có | Thời điểm cập nhật gần nhất trong Riftcodex, định dạng ISO 8601 |
-| `alternate_art` | boolean | Có | Thẻ có alternate art hay không |
-| `overnumbered` | boolean | Có | Thẻ có phải phiên bản overnumbered hay không |
-| `signature` | boolean | Có | Thẻ có phải signature card hay không |
+| Field           | Type    | Bắt buộc | Mô tả                                                           |
+| --------------- | ------- | -------- | --------------------------------------------------------------- |
+| `clean_name`    | string  | Có       | Tên thẻ đã loại bỏ ký tự đặc biệt                               |
+| `updated_on`    | string  | Có       | Thời điểm cập nhật gần nhất trong Riftcodex, định dạng ISO 8601 |
+| `alternate_art` | boolean | Có       | Thẻ có alternate art hay không                                  |
+| `overnumbered`  | boolean | Có       | Thẻ có phải phiên bản overnumbered hay không                    |
+| `signature`     | boolean | Có       | Thẻ có phải signature card hay không                            |
 
 ## Request reference
 

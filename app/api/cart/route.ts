@@ -4,7 +4,8 @@ import { getDb } from "@/lib/db";
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
   const sql = getDb();
   const items = await sql`
     SELECT listings.id AS "listingId", cards.id AS "cardId", sellers.username AS seller,
@@ -26,15 +27,27 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
-  const body = await request.json().catch(() => null) as { items?: Array<{ seller?: string; cardId?: string; finish?: string; condition?: string; quantity?: number }> } | null;
-  const items = (body?.items ?? []).map((item) => ({
-    seller: String(item.seller ?? "").toLowerCase(),
-    card_id: String(item.cardId ?? ""),
-    finish: String(item.finish ?? "").toLowerCase() === "foil" ? "foil" : "nonfoil",
-    condition: String(item.condition ?? "unspecified"),
-    quantity: Math.max(1, Math.floor(Number(item.quantity) || 1)),
-  })).filter((item) => item.seller && item.card_id);
+  if (!user)
+    return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
+  const body = (await request.json().catch(() => null)) as {
+    items?: Array<{
+      seller?: string;
+      cardId?: string;
+      finish?: string;
+      condition?: string;
+      quantity?: number;
+    }>;
+  } | null;
+  const items = (body?.items ?? [])
+    .map((item) => ({
+      seller: String(item.seller ?? "").toLowerCase(),
+      card_id: String(item.cardId ?? ""),
+      finish:
+        String(item.finish ?? "").toLowerCase() === "foil" ? "foil" : "nonfoil",
+      condition: String(item.condition ?? "unspecified"),
+      quantity: Math.max(1, Math.floor(Number(item.quantity) || 1)),
+    }))
+    .filter((item) => item.seller && item.card_id);
   const sql = getDb();
   const payload = JSON.stringify(items);
   await sql.transaction((tx) => [

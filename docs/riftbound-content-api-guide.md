@@ -26,9 +26,9 @@ Hãy chọn base URL tương ứng với region trước khi gửi request.
 
 ## Query parameters
 
-| Tên | Kiểu | Bắt buộc | Mặc định | Mô tả |
-| --- | --- | --- | --- | --- |
-| `locale` | `string` | Không | `en` | Ngôn ngữ và thiết lập vùng của response. Trong giai đoạn beta chỉ hỗ trợ `en`. |
+| Tên      | Kiểu     | Bắt buộc | Mặc định | Mô tả                                                                          |
+| -------- | -------- | -------- | -------- | ------------------------------------------------------------------------------ |
+| `locale` | `string` | Không    | `en`     | Ngôn ngữ và thiết lập vùng của response. Trong giai đoạn beta chỉ hỗ trợ `en`. |
 
 ## Ví dụ request
 
@@ -55,55 +55,55 @@ Endpoint trả về một đối tượng `RiftboundContentDTO`.
 
 ### `RiftboundContentDTO`
 
-| Field | Kiểu | Mô tả |
-| --- | --- | --- |
-| `game` | `string` | Tên game. |
-| `version` | `string` | Phiên bản nội dung. |
-| `lastUpdated` | `string` | Thời điểm nội dung được cập nhật gần nhất theo định dạng ISO timestamp. |
-| `sets` | `SetDTO[]` | Danh sách bộ thẻ. |
+| Field         | Kiểu       | Mô tả                                                                   |
+| ------------- | ---------- | ----------------------------------------------------------------------- |
+| `game`        | `string`   | Tên game.                                                               |
+| `version`     | `string`   | Phiên bản nội dung.                                                     |
+| `lastUpdated` | `string`   | Thời điểm nội dung được cập nhật gần nhất theo định dạng ISO timestamp. |
+| `sets`        | `SetDTO[]` | Danh sách bộ thẻ.                                                       |
 
 ### `SetDTO`
 
-| Field | Kiểu | Mô tả |
-| --- | --- | --- |
-| `id` | `string` | ID của bộ thẻ. |
-| `name` | `string` | Tên bộ thẻ. |
+| Field   | Kiểu        | Mô tả                   |
+| ------- | ----------- | ----------------------- |
+| `id`    | `string`    | ID của bộ thẻ.          |
+| `name`  | `string`    | Tên bộ thẻ.             |
 | `cards` | `CardDTO[]` | Danh sách thẻ thuộc bộ. |
 
 ### `CardDTO`
 
-| Field | Kiểu | Mô tả |
-| --- | --- | --- |
-| `id` | `string` | ID của thẻ. |
-| `collectorNumber` | `long` | Số thứ tự sưu tầm. |
-| `set` | `string` | Bộ thẻ chứa thẻ này. |
-| `name` | `string` | Tên thẻ. |
-| `description` | `string` | Nội dung mô tả thẻ. |
-| `type` | `string` | Loại thẻ. |
-| `rarity` | `string` | Độ hiếm. |
-| `faction` | `string` | Phe của thẻ. |
-| `stats` | `CardStatsDTO` | Các chỉ số của thẻ. |
-| `keywords` | `string[]` | Danh sách từ khóa. |
-| `art` | `CardArtDTO` | Thông tin hình ảnh. |
-| `flavorText` | `string` | Flavor text của thẻ. |
-| `tags` | `string[]` | Danh sách tag. |
+| Field             | Kiểu           | Mô tả                |
+| ----------------- | -------------- | -------------------- |
+| `id`              | `string`       | ID của thẻ.          |
+| `collectorNumber` | `long`         | Số thứ tự sưu tầm.   |
+| `set`             | `string`       | Bộ thẻ chứa thẻ này. |
+| `name`            | `string`       | Tên thẻ.             |
+| `description`     | `string`       | Nội dung mô tả thẻ.  |
+| `type`            | `string`       | Loại thẻ.            |
+| `rarity`          | `string`       | Độ hiếm.             |
+| `faction`         | `string`       | Phe của thẻ.         |
+| `stats`           | `CardStatsDTO` | Các chỉ số của thẻ.  |
+| `keywords`        | `string[]`     | Danh sách từ khóa.   |
+| `art`             | `CardArtDTO`   | Thông tin hình ảnh.  |
+| `flavorText`      | `string`       | Flavor text của thẻ. |
+| `tags`            | `string[]`     | Danh sách tag.       |
 
 ### `CardStatsDTO`
 
-| Field | Kiểu | Mô tả |
-| --- | --- | --- |
-| `energy` | `long` | Chỉ số energy. |
-| `might` | `long` | Chỉ số might. |
-| `cost` | `long` | Chi phí sử dụng. |
-| `power` | `long` | Chỉ số power. |
+| Field    | Kiểu   | Mô tả            |
+| -------- | ------ | ---------------- |
+| `energy` | `long` | Chỉ số energy.   |
+| `might`  | `long` | Chỉ số might.    |
+| `cost`   | `long` | Chi phí sử dụng. |
+| `power`  | `long` | Chỉ số power.    |
 
 ### `CardArtDTO`
 
-| Field | Kiểu | Mô tả |
-| --- | --- | --- |
+| Field          | Kiểu     | Mô tả            |
+| -------------- | -------- | ---------------- |
 | `thumbnailURL` | `string` | URL ảnh thu nhỏ. |
-| `fullURL` | `string` | URL ảnh đầy đủ. |
-| `artist` | `string` | Tên họa sĩ. |
+| `fullURL`      | `string` | URL ảnh đầy đủ.  |
+| `artist`       | `string` | Tên họa sĩ.      |
 
 ## Ví dụ response
 
@@ -151,19 +151,19 @@ Ví dụ dưới đây chỉ minh họa cấu trúc; các giá trị không ph�
 
 ## HTTP errors
 
-| Status | Ý nghĩa |
-| --- | --- |
-| `400` | Bad request — request không hợp lệ. |
-| `401` | Unauthorized — chưa xác thực hoặc thông tin xác thực không hợp lệ. |
-| `403` | Forbidden — không có quyền truy cập. |
-| `404` | Data not found — không tìm thấy dữ liệu. |
-| `405` | Method not allowed — HTTP method không được hỗ trợ. |
-| `415` | Unsupported media type — media type không được hỗ trợ. |
-| `429` | Rate limit exceeded — vượt quá giới hạn request. |
-| `500` | Internal server error — lỗi nội bộ server. |
-| `502` | Bad gateway — gateway nhận response không hợp lệ. |
-| `503` | Service unavailable — dịch vụ tạm thời không khả dụng. |
-| `504` | Gateway timeout — gateway hết thời gian chờ. |
+| Status | Ý nghĩa                                                            |
+| ------ | ------------------------------------------------------------------ |
+| `400`  | Bad request — request không hợp lệ.                                |
+| `401`  | Unauthorized — chưa xác thực hoặc thông tin xác thực không hợp lệ. |
+| `403`  | Forbidden — không có quyền truy cập.                               |
+| `404`  | Data not found — không tìm thấy dữ liệu.                           |
+| `405`  | Method not allowed — HTTP method không được hỗ trợ.                |
+| `415`  | Unsupported media type — media type không được hỗ trợ.             |
+| `429`  | Rate limit exceeded — vượt quá giới hạn request.                   |
+| `500`  | Internal server error — lỗi nội bộ server.                         |
+| `502`  | Bad gateway — gateway nhận response không hợp lệ.                  |
+| `503`  | Service unavailable — dịch vụ tạm thời không khả dụng.             |
+| `504`  | Gateway timeout — gateway hết thời gian chờ.                       |
 
 ## Lưu ý tích hợp
 

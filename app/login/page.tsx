@@ -25,10 +25,18 @@ export default function LoginPage() {
     const password = String(form.get("password") ?? "");
 
     setSubmitting(true);
-    const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }) });
-    const data = await response.json() as { error?: string; user?: SessionUser };
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = (await response.json()) as {
+      error?: string;
+      user?: SessionUser;
+    };
     setSubmitting(false);
-    if (!response.ok || !data.user) return setError(data.error ?? "Không thể đăng nhập.");
+    if (!response.ok || !data.user)
+      return setError(data.error ?? "Không thể đăng nhập.");
     setSessionUser(data.user);
     router.push(`/u/${data.user.username}`);
     router.refresh();
@@ -42,12 +50,19 @@ export default function LoginPage() {
       <div className="login-panel relative w-full max-w-[420px]">
         <Card className="border-primary/15 bg-card/95 shadow-[0_24px_70px_rgba(29,58,43,.12)] backdrop-blur-sm">
           <CardContent className="login-card-content p-5 sm:p-7">
-            <Link href="/" className="login-brand mb-5 flex w-fit items-center gap-3 text-sm font-extrabold tracking-[0.16em] sm:mb-6">
+            <Link
+              href="/"
+              className="login-brand mb-5 flex w-fit items-center gap-3 text-sm font-extrabold tracking-[0.16em] sm:mb-6"
+            >
               <BrandLogo />
               RIPBAO
             </Link>
 
-            <form className="login-form flex flex-col gap-4" onSubmit={handleSubmit} onChange={() => error && setError("")}>
+            <form
+              className="login-form flex flex-col gap-4"
+              onSubmit={handleSubmit}
+              onChange={() => error && setError("")}
+            >
               <div className="flex flex-col gap-2.5">
                 <label htmlFor="username" className="block text-xs font-bold">
                   Username
@@ -83,29 +98,43 @@ export default function LoginPage() {
                     className="absolute top-1/2 right-3 grid size-7 -translate-y-1/2 place-items-center text-muted-foreground transition-colors hover:text-foreground"
                     aria-label={showPassword ? "Ẩn password" : "Hiện password"}
                   >
-                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    {showPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
                   </button>
                 </div>
               </div>
 
               {error && (
-                <p id="login-error" role="alert" className="text-xs font-semibold text-destructive">
+                <p
+                  id="login-error"
+                  role="alert"
+                  className="text-xs font-semibold text-destructive"
+                >
                   {error}
                 </p>
               )}
 
-              <Button type="submit" className="h-12 w-full" disabled={submitting}>
+              <Button
+                type="submit"
+                className="h-12 w-full"
+                disabled={submitting}
+              >
                 {submitting ? "Đang đăng nhập..." : "Đăng nhập"}
                 <ArrowRight className="size-4" />
               </Button>
             </form>
-
           </CardContent>
         </Card>
 
         <p className="login-register mt-4 text-center text-[10px] text-muted-foreground sm:mt-5">
           Chưa có tài khoản?{" "}
-          <Link href="/register" className="font-bold text-foreground underline underline-offset-4">
+          <Link
+            href="/register"
+            className="font-bold text-foreground underline underline-offset-4"
+          >
             Tạo miễn phí
           </Link>
         </p>

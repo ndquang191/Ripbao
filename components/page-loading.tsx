@@ -14,7 +14,9 @@ export function PageLoading() {
         </div>
         <div className="text-center">
           <p className="text-xs font-extrabold tracking-[0.2em]">RIPBAO</p>
-          <p className="mt-1.5 text-[10px] text-muted-foreground">Đang tải dữ liệu...</p>
+          <p className="mt-1.5 text-[10px] text-muted-foreground">
+            Đang tải dữ liệu...
+          </p>
         </div>
         <span className="h-0.5 w-24 overflow-hidden rounded-full bg-secondary">
           <span className="page-loading-bar block h-full w-1/2 rounded-full bg-[#789342]" />

@@ -8,7 +8,10 @@ export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const query = normalizeQuery(params.get("q") ?? "");
   const page = positiveInteger(params.get("page"), 1);
-  const size = Math.min(positiveInteger(params.get("size"), DEFAULT_SIZE), MAX_SIZE);
+  const size = Math.min(
+    positiveInteger(params.get("size"), DEFAULT_SIZE),
+    MAX_SIZE,
+  );
   const offset = (page - 1) * size;
   const set = params.get("set")?.trim() || null;
   const type = params.get("type")?.trim() || null;
@@ -83,7 +86,8 @@ export async function GET(request: NextRequest) {
       pages: Math.ceil(total / size),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to search cards";
+    const message =
+      error instanceof Error ? error.message : "Unable to search cards";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

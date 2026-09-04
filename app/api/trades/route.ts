@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { createSession, getCurrentUser, setSessionCookie, type AuthUser } from "@/lib/auth";
+import {
+  createSession,
+  getCurrentUser,
+  setSessionCookie,
+  type AuthUser,
+} from "@/lib/auth";
 import { getDb } from "@/lib/db";
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
   const sql = getDb();
   const rows = await sql`
     SELECT requests.id, requests.status, requests.created_at AS "createdAt",
@@ -46,13 +52,37 @@ export async function POST(request: Request) {
     const guestId = randomBytes(4).toString("hex");
     const username = `guest_${guestId}`;
     const displayName = `Khách #${guestId.slice(0, 6).toUpperCase()}`;
-    const rows = await sql`INSERT INTO users (username, display_name, is_guest) VALUES (${username}, ${displayName}, true) RETURNING id`;
+    const rows =
+      await sql`INSERT INTO users (username, display_name, is_guest) VALUES (${username}, ${displayName}, true) RETURNING id`;
     const session = await createSession(Number(rows[0].id));
     await setSessionCookie(session.token, session.expiresAt);
-    user = { id: Number(rows[0].id), username, displayName, facebookUrl: null, isGuest: true } satisfies AuthUser;
+    user = {
+      id: Number(rows[0].id),
+      username,
+      displayName,
+      facebookUrl: null,
+      isGuest: true,
+    } satisfies AuthUser;
   }
-  const body = await request.json().catch(() => null) as { items?: Array<{ seller?: string; cardId?: string; finish?: string; condition?: string; quantity?: number }> } | null;
-  const submitted = (body?.items ?? []).map((item) => ({ seller: String(item.seller ?? "").toLowerCase(), card_id: String(item.cardId ?? ""), finish: String(item.finish ?? "").toLowerCase() === "foil" ? "foil" : "nonfoil", condition: String(item.condition ?? "unspecified"), quantity: Math.max(1, Math.floor(Number(item.quantity) || 1)) })).filter((item) => item.seller && item.card_id);
+  const body = (await request.json().catch(() => null)) as {
+    items?: Array<{
+      seller?: string;
+      cardId?: string;
+      finish?: string;
+      condition?: string;
+      quantity?: number;
+    }>;
+  } | null;
+  const submitted = (body?.items ?? [])
+    .map((item) => ({
+      seller: String(item.seller ?? "").toLowerCase(),
+      card_id: String(item.cardId ?? ""),
+      finish:
+        String(item.finish ?? "").toLowerCase() === "foil" ? "foil" : "nonfoil",
+      condition: String(item.condition ?? "unspecified"),
+      quantity: Math.max(1, Math.floor(Number(item.quantity) || 1)),
+    }))
+    .filter((item) => item.seller && item.card_id);
   const payload = JSON.stringify(submitted);
   const rows = await sql`
     WITH active_cart AS (
@@ -88,6 +118,22 @@ export async function POST(request: Request) {
     )
     SELECT id FROM created
   `;
-  if (rows.length === 0) return NextResponse.json({ error: "Giỏ hàng không còn card khả dụng." }, { status: 409 });
-  return NextResponse.json({ created: rows.length, ids: rows.map((row) => String(row.id)), user: { username: user.username, displayName: user.displayName, facebookUrl: user.facebookUrl, isGuest: user.isGuest } }, { status: 201 });
+  if (rows.length === 0)
+    return NextResponse.json(
+      { error: "Giỏ hàng không còn card khả dụng." },
+      { status: 409 },
+    );
+  return NextResponse.json(
+    {
+      created: rows.length,
+      ids: rows.map((row) => String(row.id)),
+      user: {
+        username: user.username,
+        displayName: user.displayName,
+        facebookUrl: user.facebookUrl,
+        isGuest: user.isGuest,
+      },
+    },
+    { status: 201 },
+  );
 }

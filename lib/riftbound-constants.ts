@@ -7,7 +7,10 @@ export const RIFTBOUND_DOMAINS = [
   "Order",
 ] as const;
 
-export const RIFTBOUND_DOMAIN_COLORS: Record<(typeof RIFTBOUND_DOMAINS)[number], string> = {
+export const RIFTBOUND_DOMAIN_COLORS: Record<
+  (typeof RIFTBOUND_DOMAINS)[number],
+  string
+> = {
   Body: "#c2410c",
   Calm: "#4d7c0f",
   Chaos: "#7e22ce",

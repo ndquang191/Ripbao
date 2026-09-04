@@ -44,7 +44,10 @@ export function readGuestTrades(): StoredGuestTrade[] {
 
 export function saveGuestTrade(trade: StoredGuestTrade) {
   const current = readGuestTrades().filter((item) => item.id !== trade.id);
-  window.localStorage.setItem(guestTradesStorageKey, JSON.stringify([trade, ...current]));
+  window.localStorage.setItem(
+    guestTradesStorageKey,
+    JSON.stringify([trade, ...current]),
+  );
 }
 
 export function removeGuestTrade(id: string) {

@@ -18,7 +18,8 @@ export async function GET() {
       domains: domains.map(({ value }) => value),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to load card filters";
+    const message =
+      error instanceof Error ? error.message : "Unable to load card filters";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
