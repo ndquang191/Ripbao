@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
 	Check,
 	ChevronDown,
 	Eye,
@@ -52,7 +55,16 @@ type ApiListing = Omit<CardData, "id"> & {
 };
 type Edit = { quantity: number; minPrice: number; tcgMultiplier: number };
 type Filters = { sets: string[]; types: string[]; rarities: string[]; domains: string[] };
+type Sort = { key: "name" | "quantity" | "finalPrice"; direction: "asc" | "desc" };
 const domainOrder = ["Body", "Calm", "Chaos", "Fury", "Mind", "Order"];
+const quickPricingRarities = ["Common", "Uncommon", "Rare", "Epic", "Overnumbered"];
+const quickPricingRarityColors: Record<string, string> = {
+	Common: "#e5e7eb",
+	Uncommon: "#a7f3d0",
+	Rare: "#fbcfe8",
+	Epic: "#a5f3fc",
+	Overnumbered: "#fef08a",
+};
 
 export default function CollectionPage() {
 	const [username, setUsername] = useState("");
@@ -67,6 +79,7 @@ export default function CollectionPage() {
 	const [saving, setSaving] = useState(false);
 	const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
 	const [pricing, setPricing] = useState(false);
+	const [sort, setSort] = useState<Sort>({ key: "name", direction: "asc" });
 	const [minimums, setMinimums] = useState<Record<string, number>>(() =>
 		Object.fromEntries(
 			Object.entries(currencyConfig.quickMinimums).map(([r, v]) => [
@@ -168,8 +181,21 @@ export default function CollectionPage() {
 		});
 		return [...map]
 			.sort(([a], [b]) => rank(a) - rank(b))
-			.map(([d, list]) => [d, list.sort(compare)] as const);
-	}, [visible]);
+			.map(([d, list]) => [d, list.sort((a, b) => compareBySort(a, b, draft, sort))] as const);
+	}, [draft, sort, visible]);
+	const changeSort = (key: Sort["key"]) => {
+		setSort((current) => ({
+			key,
+			direction:
+				current.key === key
+					? current.direction === "asc"
+						? "desc"
+						: "asc"
+					: key === "name"
+						? "asc"
+						: "desc",
+		}));
+	};
 	const positive = Object.values(draft).filter((x) => x.quantity > 0);
 	const update = (id: string, patch: Partial<Edit>) => {
 		setSaveStatus("idle");
@@ -207,7 +233,7 @@ export default function CollectionPage() {
 		setDraft((current) => {
 			const next = { ...current };
 			cards.forEach((c) => {
-				if (next[c.id]?.quantity > 0)
+				if (next[c.id]?.quantity > 0 && quickPricingRarities.includes(c.rarity))
 					next[c.id] = {
 						...next[c.id],
 						minPrice: minimums[c.rarity] ?? defaultMin(c.rarity),
@@ -261,12 +287,14 @@ export default function CollectionPage() {
 						<Pricing
 							open={pricing}
 							setOpen={setPricing}
-							rarities={options.rarities.length ? options.rarities : [...RIFTBOUND_RARITIES]}
+							rarities={quickPricingRarities}
 							minimums={minimums}
 							setMinimums={setMinimums}
 							multipliers={multipliers}
 							setMultipliers={setMultipliers}
-							count={positive.length}
+							count={cards.filter(
+								(c) => draft[c.id]?.quantity > 0 && quickPricingRarities.includes(c.rarity),
+							).length}
 							apply={bulk}
 						/>
 						<Button size="sm" disabled={!dirty || saving} onClick={save}>
@@ -318,6 +346,8 @@ export default function CollectionPage() {
 								cards={list}
 								draft={draft}
 								saved={saved}
+								sort={sort}
+								changeSort={changeSort}
 								update={update}
 							/>
 						))}
@@ -385,12 +415,16 @@ function Section({
 	cards,
 	draft,
 	saved,
+	sort,
+	changeSort,
 	update,
 }: {
 	domain: string;
 	cards: CardData[];
 	draft: Record<string, Edit>;
 	saved: Record<string, Edit>;
+	sort: Sort;
+	changeSort: (key: Sort["key"]) => void;
 	update: (id: string, x: Partial<Edit>) => void;
 }) {
 	const copies = cards.reduce((n, c) => n + Math.max(0, draft[c.id]?.quantity ?? 0), 0);
@@ -411,12 +445,18 @@ function Section({
 			</header>
 			<div className="hidden grid-cols-[52px_minmax(170px,1fr)_130px_112px_132px_92px_120px] gap-2 border-b bg-secondary/45 px-3 py-2 text-[9px] font-bold uppercase text-muted-foreground md:grid">
 				<span>Ảnh</span>
-				<span>Card</span>
+				<SortButton label="Tên card" sortKey="name" sort={sort} changeSort={changeSort} />
 				<span>Set / Mã</span>
-				<span>Số lượng</span>
+				<SortButton label="Số lượng" sortKey="quantity" sort={sort} changeSort={changeSort} />
 				<span>Giá Min</span>
 				<span>× TCG</span>
-				<span>Giá cuối</span>
+				<SortButton
+					label="Giá cuối"
+					sortKey="finalPrice"
+					sort={sort}
+					changeSort={changeSort}
+					className="justify-end border-l pl-3 text-right"
+				/>
 			</div>
 			{cards.map((c) => (
 				<Row
@@ -428,6 +468,37 @@ function Section({
 				/>
 			))}
 		</section>
+	);
+}
+
+function SortButton({
+	label,
+	sortKey,
+	sort,
+	changeSort,
+	className,
+}: {
+	label: string;
+	sortKey: Sort["key"];
+	sort: Sort;
+	changeSort: (key: Sort["key"]) => void;
+	className?: string;
+}) {
+	const active = sort.key === sortKey;
+	const Icon = active ? (sort.direction === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+	return (
+		<button
+			type="button"
+			onClick={() => changeSort(sortKey)}
+			className={cn(
+				"flex items-center gap-1 text-left uppercase hover:text-foreground",
+				active && "text-foreground",
+				className,
+			)}
+		>
+			{label}
+			<Icon className={cn("size-3", !active && "opacity-55")} aria-hidden="true" />
+		</button>
 	);
 }
 
@@ -489,17 +560,14 @@ function Row({
 				</label>
 				<label className="text-[9px] font-bold text-muted-foreground">
 					<span className="md:hidden">× TCG</span>
-					<input
-						type="number"
-						min="0"
-						step=".05"
+					<Multiplier
 						value={edit.tcgMultiplier}
-						onChange={(e) => update(card.id, { tcgMultiplier: e.target.valueAsNumber || 0 })}
-						className="mt-1 h-8 w-full rounded-sm border bg-background px-2 text-center text-[10px] font-bold md:mt-0"
+						set={(tcgMultiplier) => update(card.id, { tcgMultiplier })}
+						className="mt-1 md:mt-0"
 					/>
 				</label>
 			</div>
-			<div>
+			<div className="text-right md:border-l md:pl-3">
 				<span className="text-[9px] font-bold text-muted-foreground md:hidden">Giá cuối </span>
 				<strong className="text-[10px] text-[#506b32]">{finalPrice(card, edit)}</strong>
 			</div>
@@ -786,25 +854,29 @@ function Pricing(p: {
 				<ChevronDown className={cn("size-3", p.open && "rotate-180")} />
 			</Button>
 			{p.open && (
-				<div className="absolute right-0 top-full z-40 mt-2 w-[min(92vw,390px)] rounded-sm border bg-card p-3 shadow-xl">
+				<div className="absolute right-0 top-full z-40 mt-2 w-[min(92vw,420px)] rounded-sm border bg-card p-3 shadow-xl">
 					<strong className="text-xs">Thiết lập giá nhanh</strong>
-					<div className="mt-3 grid grid-cols-[1fr_110px_80px] items-center gap-2">
+					<div className="mt-3 grid grid-cols-[1fr_120px_90px] items-center gap-2">
+						<span className="text-[9px] font-bold text-muted-foreground">Độ hiếm</span>
+						<span className="text-[9px] font-bold text-muted-foreground">Giá tối thiểu</span>
+						<span className="text-[9px] font-bold text-muted-foreground">Hệ số TCG</span>
 						{p.rarities.map((r) => (
 							<div key={r} className="contents">
-								<span className="truncate text-[10px] font-bold">{r}</span>
+								<span className="flex min-w-0 items-center gap-2 text-[10px] font-bold">
+									<span
+										aria-hidden="true"
+										className="size-2.5 shrink-0 rounded-[2px] border border-black/15"
+										style={{ backgroundColor: quickPricingRarityColors[r] }}
+									/>
+									{r}
+								</span>
 								<Money
 									value={p.minimums[r] ?? defaultMin(r)}
 									set={(x) => p.setMinimums((v) => ({ ...v, [r]: x }))}
 								/>
-								<input
-									type="number"
-									min="0"
-									step=".05"
+								<Multiplier
 									value={p.multipliers[r] ?? defaultMult(r)}
-									onChange={(e) =>
-										p.setMultipliers((v) => ({ ...v, [r]: e.target.valueAsNumber || 0 }))
-									}
-									className="h-8 rounded-sm border bg-background px-2 text-center text-[10px] font-bold"
+									set={(x) => p.setMultipliers((v) => ({ ...v, [r]: x }))}
 								/>
 							</div>
 						))}
@@ -905,6 +977,19 @@ function Quantity({ value, name, set }: { value: number; name: string; set: (x: 
 	);
 }
 function Money({ value, set }: { value: number; set: (x: number) => void }) {
+	const [inputValue, setInputValue] = useState(String(value));
+
+	useEffect(() => {
+		setInputValue(String(value));
+	}, [value]);
+
+	const commit = () => {
+		const parsed = Number(inputValue);
+		const next = inputValue === "" || !Number.isFinite(parsed) || parsed < 0 ? 0 : parsed;
+		setInputValue(String(next));
+		set(next);
+	};
+
 	return (
 		<div className="relative mt-1 md:mt-0">
 			<span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">
@@ -914,11 +999,59 @@ function Money({ value, set }: { value: number; set: (x: number) => void }) {
 				type="number"
 				min="0"
 				step={currencyConfig.inputStep}
-				value={value}
-				onChange={(e) => set(e.target.valueAsNumber || 0)}
+				value={inputValue}
+				onChange={(e) => {
+					const next = e.target.value;
+					setInputValue(next);
+					const parsed = Number(next);
+					if (next !== "" && Number.isFinite(parsed) && parsed >= 0) set(parsed);
+				}}
+				onBlur={commit}
 				className="h-8 w-full rounded-sm border bg-background pl-6 pr-2 text-[10px] font-bold"
 			/>
 		</div>
+	);
+}
+function Multiplier({
+	value,
+	set,
+	className,
+}: {
+	value: number;
+	set: (x: number) => void;
+	className?: string;
+}) {
+	const [inputValue, setInputValue] = useState(String(value));
+
+	useEffect(() => {
+		setInputValue(String(value));
+	}, [value]);
+
+	const commit = () => {
+		const parsed = Number(inputValue);
+		const next = inputValue === "" || !Number.isFinite(parsed) || parsed < 0 ? 0 : parsed;
+		setInputValue(String(next));
+		set(next);
+	};
+
+	return (
+		<input
+			type="number"
+			min="0"
+			step=".05"
+			value={inputValue}
+			onChange={(e) => {
+				const next = e.target.value;
+				setInputValue(next);
+				const parsed = Number(next);
+				if (next !== "" && Number.isFinite(parsed) && parsed >= 0) set(parsed);
+			}}
+			onBlur={commit}
+			className={cn(
+				"h-8 w-full rounded-sm border bg-background px-2 text-center text-[10px] font-bold",
+				className,
+			)}
+		/>
 	);
 }
 function Image({ card, className }: { card: CardData; className?: string }) {
@@ -983,9 +1116,28 @@ function compare(a: CardData, b: CardData) {
 		a.collectorNumber - b.collectorNumber
 	);
 }
+function compareBySort(
+	a: CardData,
+	b: CardData,
+	draft: Record<string, Edit>,
+	sort: Sort,
+) {
+	const aEdit = editOf(draft[a.id]);
+	const bEdit = editOf(draft[b.id]);
+	const result =
+		sort.key === "name"
+			? compare(a, b)
+			: sort.key === "quantity"
+				? aEdit.quantity - bEdit.quantity
+				: finalPriceValue(a, aEdit) - finalPriceValue(b, bEdit);
+	return (sort.direction === "asc" ? result : -result) || compare(a, b);
+}
 function finalPrice(c: CardData, e: Edit) {
-	const n = Math.max(e.minPrice, (c.tcgPrice ?? 0) * e.tcgMultiplier);
+	const n = finalPriceValue(c, e);
 	return n > 0 ? formatCurrency(n) : "—";
+}
+function finalPriceValue(c: CardData, e: Edit) {
+	return Math.max(e.minPrice, (c.tcgPrice ?? 0) * e.tcgMultiplier);
 }
 function defaultMin(r: string) {
 	return currencyConfig.quickMinimums[r.toLowerCase()] ?? 0;
