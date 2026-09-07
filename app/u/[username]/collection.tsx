@@ -1,11 +1,13 @@
 "use client";
 
 import {
+  ChevronDown,
   Layers,
   Minus,
   Plus,
   Search,
   ShoppingBag,
+  SlidersHorizontal,
   Trash2,
   X,
 } from "lucide-react";
@@ -70,6 +72,7 @@ export function Collection({
   const [faction, setFaction] = useState("");
   const [sort, setSort] = useState<(typeof sortOptions)[number]>("Theo tên");
   const [onlySelected, setOnlySelected] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [previewCard, setPreviewCard] = useState<CollectionCard | null>(null);
   const ownedCards = cards;
 
@@ -185,70 +188,100 @@ export function Collection({
         </div>
       </div>
 
-      <div
-        className="relative z-30 mb-5 flex flex-wrap items-center gap-2 overflow-visible border-y bg-card/60 px-3 py-3"
-        aria-label="Bộ lọc card"
-      >
-        <FilterDropdown
-          label="Set"
-          value={set}
-          options={filterOptions.sets}
-          onChange={setSet}
-          className="[&>summary]:min-w-48"
-        />
-        <FilterDropdown
-          label="Loại card"
-          value={type}
-          options={filterOptions.types}
-          onChange={setType}
-        />
-        <FilterDropdown
-          label="Độ hiếm"
-          value={rarity}
-          options={filterOptions.rarities}
-          onChange={setRarity}
-        />
-        <DomainFilter
-          value={faction}
-          options={filterOptions.domains}
-          onChange={setFaction}
-        />
-        {!isOwner && (
-          <label
+      <div className="relative z-30 mb-5 overflow-visible border-y bg-card/60">
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((open) => !open)}
+          className="flex h-11 w-full items-center justify-start gap-2 px-3 text-left text-xs font-bold text-[#506b32] sm:hidden"
+          aria-expanded={filtersOpen}
+          aria-controls="collection-card-filters"
+        >
+          <SlidersHorizontal className="size-3.5" />
+          <span>Bộ lọc</span>
+          {hasFilters && (
+            <span className="rounded-full bg-accent px-1.5 py-0.5 text-[9px] font-black text-accent-foreground">
+              Đang áp dụng
+            </span>
+          )}
+          <ChevronDown
             className={cn(
-              "flex h-8 cursor-pointer items-center gap-2 rounded-sm border px-3 text-[10px] font-bold transition-colors",
-              onlySelected && "border-[#8ba55e] bg-[#edf3e5] text-[#506b32]",
+              "ml-auto size-3.5 transition-transform",
+              filtersOpen && "rotate-180",
             )}
-          >
-            <input
-              type="checkbox"
-              checked={onlySelected}
-              onChange={(event) => setOnlySelected(event.target.checked)}
-              className="size-3 accent-[#607d35]"
-            />{" "}
-            Đã chọn
-          </label>
-        )}
-        <FilterDropdown
-          label="Sắp xếp"
-          value={sort}
-          options={sortOptions}
-          onChange={(value) => setSort(value as (typeof sortOptions)[number])}
-          allowEmpty={false}
-          className="ml-auto [&>summary]:min-w-36"
-        />
-        <span className="shrink-0 text-[10px] text-muted-foreground">
-          {filteredCards.length}/{ownedCards.length} card
-        </span>
-        {hasFilters && (
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="inline-flex shrink-0 items-center gap-1 text-[10px] font-bold text-[#607d35] hover:underline"
-          >
-            <X className="size-3" /> Xoá lọc
-          </button>
-        )}
+          />
+        </button>
+        <div
+          id="collection-card-filters"
+          className={cn(
+            "flex-wrap items-center justify-start gap-2 px-3 py-3 text-left sm:flex",
+            filtersOpen ? "flex border-t sm:border-t-0" : "hidden",
+          )}
+          aria-label="Bộ lọc card"
+        >
+          <FilterDropdown
+            label="Set"
+            value={set}
+            options={filterOptions.sets}
+            onChange={setSet}
+            className="[&>summary]:min-w-48"
+          />
+          <FilterDropdown
+            label="Loại card"
+            value={type}
+            options={filterOptions.types}
+            onChange={setType}
+          />
+          <FilterDropdown
+            label="Độ hiếm"
+            value={rarity}
+            options={filterOptions.rarities}
+            onChange={setRarity}
+          />
+          <DomainFilter
+            value={faction}
+            options={filterOptions.domains}
+            onChange={setFaction}
+          />
+          {!isOwner && (
+            <label
+              className={cn(
+                "flex h-8 cursor-pointer items-center gap-2 rounded-sm border px-3 text-[10px] font-bold transition-colors",
+                onlySelected &&
+                  "border-[#8ba55e] bg-[#edf3e5] text-[#506b32]",
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={onlySelected}
+                onChange={(event) => setOnlySelected(event.target.checked)}
+                className="size-3 accent-[#607d35]"
+              />{" "}
+              Đã chọn
+            </label>
+          )}
+          <FilterDropdown
+            label="Sắp xếp"
+            value={sort}
+            options={sortOptions}
+            onChange={(value) =>
+              setSort(value as (typeof sortOptions)[number])
+            }
+            allowEmpty={false}
+            className="[&>summary]:min-w-36"
+          />
+          <span className="shrink-0 text-[10px] text-muted-foreground">
+            {filteredCards.length}/{ownedCards.length} card
+          </span>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex shrink-0 items-center gap-1 text-left text-[10px] font-bold text-[#607d35] hover:underline"
+            >
+              <X className="size-3" /> Xoá lọc
+            </button>
+          )}
+        </div>
       </div>
 
       {filteredCards.length > 0 ? (
@@ -258,6 +291,23 @@ export function Collection({
               (item) => item.key === `${sellerKey}:${card.id}`,
             );
             const atLimit = (cartItem?.quantity ?? 0) >= card.quantity;
+            const addCardToCart = () =>
+              addItem({
+                cardId: card.id,
+                seller: sellerKey,
+                sellerDisplayName: displayName,
+                sellerFacebookUrl: facebookUrl ?? undefined,
+                name: card.name,
+                set: card.set,
+                number: card.number,
+                finish: card.finish,
+                condition: card.condition,
+                price: card.price,
+                imageUrl: card.imageUrl,
+                glyph: card.glyph,
+                gradient: card.gradient,
+                stock: card.quantity,
+              });
             return (
               <Card
                 key={card.id}
@@ -284,7 +334,7 @@ export function Collection({
                       event.stopPropagation();
                       updateQuantity(cartItem.key, 0);
                     }}
-                    className="absolute top-0 right-0 z-30 grid min-w-8 translate-x-1/2 -translate-y-1/2 place-items-center rounded-sm border-2 border-card bg-accent px-2 py-1 text-[11px] font-black text-accent-foreground shadow-md"
+                    className="absolute top-0 right-0 z-30 hidden min-w-8 translate-x-1/2 -translate-y-1/2 place-items-center rounded-sm border-2 border-card bg-accent px-2 py-1 text-[11px] font-black text-accent-foreground shadow-md sm:grid"
                     aria-label={`Xoá ${card.name} khỏi giỏ`}
                     title="Xoá khỏi giỏ"
                   >
@@ -308,7 +358,7 @@ export function Collection({
                     />
                   )}
                   {!isOwner && (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-[30%] z-20 flex justify-center px-2 opacity-0 transition-all duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+                    <div className="pointer-events-none absolute inset-x-0 bottom-[30%] z-20 hidden justify-center px-2 opacity-0 transition-all duration-200 group-hover:opacity-100 group-focus-within:opacity-100 sm:flex">
                       {cartItem ? (
                         <div className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-white/70 bg-card/95 p-1 shadow-xl backdrop-blur-md">
                           <button
@@ -366,22 +416,7 @@ export function Collection({
                           title="Thêm vào giỏ"
                           onClick={(event) => {
                             event.stopPropagation();
-                            addItem({
-                              cardId: card.id,
-                              seller: sellerKey,
-                              sellerDisplayName: displayName,
-                              sellerFacebookUrl: facebookUrl ?? undefined,
-                              name: card.name,
-                              set: card.set,
-                              number: card.number,
-                              finish: card.finish,
-                              condition: card.condition,
-                              price: card.price,
-                              imageUrl: card.imageUrl,
-                              glyph: card.glyph,
-                              gradient: card.gradient,
-                              stock: card.quantity,
-                            });
+                            addCardToCart();
                           }}
                         >
                           <ShoppingBag className="size-4" strokeWidth={2.25} />
@@ -416,6 +451,64 @@ export function Collection({
                         ×{card.quantity}
                       </span>
                     </div>
+                    {!isOwner && (
+                      <div className="mt-2 border-t pt-2 sm:hidden">
+                        {cartItem ? (
+                          <div
+                            className="flex h-9 items-center overflow-hidden rounded-md border bg-background"
+                            aria-label={`${card.name}: đã chọn ${cartItem.quantity} trên ${card.quantity}`}
+                          >
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                updateQuantity(
+                                  cartItem.key,
+                                  cartItem.quantity - 1,
+                                );
+                              }}
+                              className="grid h-full flex-1 place-items-center text-muted-foreground active:bg-secondary active:text-foreground"
+                              aria-label={`Giảm số lượng ${card.name}`}
+                            >
+                              <Minus className="size-3.5" />
+                            </button>
+                            <span className="grid h-full min-w-12 place-items-center border-x bg-card px-1 text-[10px] font-black">
+                              {cartItem.quantity}/{card.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={atLimit}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                updateQuantity(
+                                  cartItem.key,
+                                  cartItem.quantity + 1,
+                                );
+                              }}
+                              className="grid h-full flex-1 place-items-center text-primary active:bg-secondary disabled:opacity-30"
+                              aria-label={`Tăng số lượng ${card.name}`}
+                            >
+                              <Plus className="size-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="accent"
+                            size="sm"
+                            className="h-9 w-full px-2 text-[10px]"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              addCardToCart();
+                            }}
+                            aria-label={`Thêm ${card.name} vào giỏ`}
+                          >
+                            <ShoppingBag className="size-3.5" strokeWidth={2.25} />
+                            Thêm vào giỏ
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </div>
               </Card>

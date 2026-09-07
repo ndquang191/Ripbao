@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Check, Copy, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/components/cart-provider";
 import { EmptyState } from "@/components/empty-state";
 import { SiteHeader } from "@/components/site-header";
@@ -34,6 +34,52 @@ export default function CartPage() {
   const [pendingItems, setPendingItems] = useState<typeof items>([]);
   const [quantityLimitKey, setQuantityLimitKey] = useState<string | null>(null);
   const quantityLimitTimer = useRef<number | null>(null);
+  const guestDialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!guestDialogOpen) return;
+    const trigger = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const panel = guestDialogRef.current;
+    panel?.querySelector<HTMLButtonElement>("button")?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setGuestDialogOpen(false);
+      }
+      if (event.key !== "Tab" || !panel) return;
+      const focusable = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), a[href], [tabindex="0"]',
+        ),
+      );
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+      if (trigger?.isConnected) trigger.focus();
+    };
+  }, [guestDialogOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (quantityLimitTimer.current) {
+        window.clearTimeout(quantityLimitTimer.current);
+      }
+    };
+  }, []);
+
   const groups = Object.entries(
     items.reduce<Record<string, typeof items>>((result, item) => {
       (result[item.seller] ??= []).push(item);
@@ -140,19 +186,24 @@ export default function CartPage() {
 
   return (
     <main className="paper-grid min-h-dvh">
-      <div className="mx-auto w-full max-w-6xl px-5 py-5 sm:px-8 lg:py-7">
+      <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-8 lg:py-7">
         <SiteHeader />
 
-        <div className="flex items-end justify-between gap-4 py-7">
+        <div className="flex flex-col items-start gap-2 py-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:py-7">
           <div>
             <PageTitle icon={ShoppingBag}>Giỏ hàng</PageTitle>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-sm text-muted-foreground sm:text-xs">
               {count} card từ {groups.length} collection
-              {saveStatus === "saving" && " · Đang lưu…"}
+              {saveStatus === "saving" && (
+                <span className="block sm:inline" role="status">
+                  <span className="hidden sm:inline"> · </span>
+                  Đang lưu…
+                </span>
+              )}
               {saveStatus === "error" && (
-                <span className="text-destructive">
-                  {" "}
-                  · Lưu giỏ hàng thất bại
+                <span className="block text-destructive sm:inline" role="alert">
+                  <span className="hidden sm:inline"> · </span>
+                  Lưu giỏ hàng thất bại
                 </span>
               )}
             </p>
@@ -162,7 +213,7 @@ export default function CartPage() {
               variant="ghost"
               size="sm"
               onClick={clear}
-              className="text-destructive"
+              className="min-h-11 text-sm text-destructive sm:min-h-0 sm:text-xs"
             >
               <Trash2 className="size-3.5" /> Xoá giỏ hàng
             </Button>
@@ -174,11 +225,14 @@ export default function CartPage() {
             icon={ShoppingBag}
             title="Giỏ hàng đang trống"
             description="Khám phá các collection và chọn card bạn thích."
-            className="min-h-72"
+            className="min-h-72 max-sm:[&>div]:p-5 max-sm:[&_p]:text-sm"
           >
             <Link
               href="/"
-              className={cn(buttonVariants({ size: "sm" }), "mt-5")}
+              className={cn(
+                buttonVariants({ size: "sm" }),
+                "mt-5 min-h-11 w-full text-sm sm:min-h-0 sm:w-auto sm:text-xs",
+              )}
             >
               Khám phá collection
             </Link>
@@ -219,9 +273,17 @@ export default function CartPage() {
                 lines.push(
                   `Tổng: ${formatCurrency(sellerTotal)}${needsQuote ? " + card cần báo giá" : ""}`,
                 );
-                await navigator.clipboard.writeText(
-                  `${sellerDisplayName}\n${lines.join("\n")}`,
-                );
+                try {
+                  await navigator.clipboard.writeText(
+                    `${sellerDisplayName}\n${lines.join("\n")}`,
+                  );
+                } catch {
+                  toast({
+                    title: "Không thể sao chép. Vui lòng thử lại.",
+                    variant: "error",
+                  });
+                  return;
+                }
                 setCopiedSeller(seller);
                 toast({
                   title: `Đã sao chép danh sách card của ${sellerDisplayName}.`,
@@ -237,12 +299,15 @@ export default function CartPage() {
               };
 
               return (
-                <section key={seller} className="border-b pb-5">
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
+                <section
+                  key={seller}
+                  className="overflow-hidden rounded-lg border bg-card/55 shadow-sm sm:overflow-visible sm:rounded-none sm:border-x-0 sm:border-t-0 sm:bg-transparent sm:pb-5 sm:shadow-none"
+                >
+                  <div className="flex items-center justify-between gap-2 border-b bg-card/80 px-3 py-2 sm:mb-2 sm:flex-wrap sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+                    <div className="flex min-w-0 items-center gap-2 sm:gap-1.5">
                       <Link
                         href={`/u/${encodeURIComponent(seller)}`}
-                        className="font-bold hover:text-[#5f793f] hover:underline"
+                        className="min-w-0 truncate py-2 font-bold hover:text-[#5f793f] hover:underline sm:py-0"
                       >
                         {sellerDisplayName}
                       </Link>
@@ -251,7 +316,7 @@ export default function CartPage() {
                           href={sellerFacebookUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="grid size-6 place-items-center rounded-sm border bg-card text-[10px] font-black text-primary transition-colors hover:bg-secondary"
+                          className="grid size-10 shrink-0 place-items-center rounded-sm border bg-card text-sm font-black text-primary transition-colors hover:bg-secondary sm:size-6 sm:text-[10px]"
                           aria-label={`Mở Facebook của ${sellerDisplayName} để nhắn tin`}
                           title="Mở Facebook để nhắn tin"
                         >
@@ -259,8 +324,8 @@ export default function CartPage() {
                         </a>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-muted-foreground">
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="hidden text-[10px] text-muted-foreground sm:inline">
                         {sellerCount} card · Tổng:{" "}
                         <strong className="text-foreground">
                           {formatCurrency(sellerTotal)}
@@ -270,7 +335,7 @@ export default function CartPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[9px]"
+                        className="h-10 px-3 text-xs sm:h-7 sm:px-2 sm:text-[9px]"
                         onClick={copyCards}
                       >
                         {copiedSeller === seller ? (
@@ -282,27 +347,18 @@ export default function CartPage() {
                       </Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid grid-cols-1 divide-y px-3 sm:grid-cols-2 sm:gap-2.5 sm:divide-y-0 sm:px-0 md:grid-cols-3 lg:grid-cols-4">
                     {sellerItems.map((item) => {
                       const unitPrice = parseCurrency(item.price);
                       return (
                         <Card
                           key={item.key}
-                          className="relative min-w-0 overflow-hidden p-2.5"
+                          className="min-w-0 rounded-none border-0 bg-transparent px-0 py-3 shadow-none sm:relative sm:overflow-hidden sm:rounded-lg sm:border sm:bg-card sm:p-2.5 sm:shadow-sm"
                         >
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute top-1 right-1 z-10 size-6 rounded-sm bg-card/85 text-muted-foreground shadow-sm backdrop-blur hover:text-destructive"
-                            onClick={() => removeItem(item.key)}
-                            aria-label={`Xoá ${item.name}`}
-                          >
-                            <Trash2 className="size-3" />
-                          </Button>
-                          <div className="flex min-w-0 gap-2.5">
+                          <div className="flex min-w-0 gap-3 sm:gap-2.5">
                             <div
                               className={cn(
-                                "relative grid h-20 aspect-[469/655] shrink-0 place-items-center overflow-hidden rounded-[5px] border-2 border-[#bca66e] bg-gradient-to-br",
+                                "relative grid h-28 aspect-[469/655] shrink-0 place-items-center overflow-hidden rounded-[7px] border-2 border-[#bca66e] bg-gradient-to-br sm:h-20 sm:rounded-[5px]",
                                 item.gradient,
                               )}
                             >
@@ -314,14 +370,25 @@ export default function CartPage() {
                                 />
                               )}
                             </div>
-                            <div className="min-w-0 pt-0.5">
-                              <p className="truncate pr-5 text-[8px] font-bold tracking-wide text-muted-foreground uppercase">
+                            <div className="flex min-w-0 flex-1 flex-col pt-0.5 sm:block">
+                              <div className="flex min-w-0 items-start justify-between gap-1">
+                                <h2 className="min-w-0 text-base leading-6 font-bold [overflow-wrap:anywhere] sm:mt-1 sm:truncate sm:pr-5 sm:text-xs sm:leading-4">
+                                  {item.name}
+                                </h2>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="-mt-2 -mr-2 size-11 shrink-0 rounded-sm text-muted-foreground hover:text-destructive sm:absolute sm:top-1 sm:right-1 sm:z-10 sm:mt-0 sm:mr-0 sm:size-6 sm:bg-card/85 sm:shadow-sm sm:backdrop-blur"
+                                  onClick={() => removeItem(item.key)}
+                                  aria-label={`Xoá ${item.name}`}
+                                >
+                                  <Trash2 className="size-4 sm:size-3" />
+                                </Button>
+                              </div>
+                              <p className="mt-1 text-xs font-bold tracking-wide text-muted-foreground uppercase [overflow-wrap:anywhere] sm:mt-0 sm:truncate sm:pr-5 sm:text-[8px]">
                                 {item.set} · {item.number}
                               </p>
-                              <h2 className="mt-1 truncate text-xs leading-4 font-bold">
-                                {item.name}
-                              </h2>
-                              <span className="mt-3 block text-[9px] text-muted-foreground">
+                              <span className="mt-auto block pt-3 text-sm text-muted-foreground [overflow-wrap:anywhere] sm:mt-3 sm:pt-0 sm:text-[9px]">
                                 {unitPrice === null
                                   ? item.price
                                   : formatCurrency(unitPrice)}{" "}
@@ -329,8 +396,8 @@ export default function CartPage() {
                               </span>
                             </div>
                           </div>
-                          <div className="mt-2 flex items-center justify-between border-t pt-1.5">
-                            <strong className="text-xs">
+                          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3 sm:mt-2 sm:flex-nowrap sm:gap-0 sm:pt-1.5">
+                            <strong className="text-base sm:text-xs">
                               {unitPrice === null
                                 ? "Liên hệ"
                                 : formatCurrency(unitPrice * item.quantity)}
@@ -338,30 +405,30 @@ export default function CartPage() {
                             <div className="flex items-center rounded-sm border bg-background p-px">
                               <button
                                 type="button"
-                                className="grid size-4.5 place-items-center rounded-sm hover:bg-secondary disabled:opacity-30"
+                                className="grid size-11 shrink-0 place-items-center sm:size-4.5 rounded-sm hover:bg-secondary disabled:opacity-30"
                                 disabled={item.quantity <= 1}
                                 onClick={() =>
                                   changeQuantity(item.key, item.quantity - 1)
                                 }
                                 aria-label="Giảm số lượng"
                               >
-                                <Minus className="size-2.5" />
+                                <Minus className="size-4 sm:size-2.5" />
                               </button>
-                              <span className="w-7 text-center text-[8px] font-black">
+                              <span className="min-w-9 px-1 text-center text-sm font-black sm:w-7 sm:min-w-0 sm:px-0 sm:text-[8px]">
                                 {item.quantity}
                                 {quantityLimitKey === item.key &&
                                   `/${item.stock}`}
                               </span>
                               <button
                                 type="button"
-                                className="grid size-4.5 place-items-center rounded-sm hover:bg-secondary disabled:opacity-30"
+                                className="grid size-11 shrink-0 place-items-center sm:size-4.5 rounded-sm hover:bg-secondary disabled:opacity-30"
                                 disabled={item.quantity >= item.stock}
                                 onClick={() =>
                                   changeQuantity(item.key, item.quantity + 1)
                                 }
                                 aria-label="Tăng số lượng"
                               >
-                                <Plus className="size-2.5" />
+                                <Plus className="size-4 sm:size-2.5" />
                               </button>
                             </div>
                           </div>
@@ -369,14 +436,41 @@ export default function CartPage() {
                       );
                     })}
                   </div>
-                  <div className="mt-4 flex justify-end">
+                  <div className="flex flex-col gap-3 border-t bg-card/80 p-3 sm:mt-4 sm:flex-row sm:justify-end sm:border-0 sm:bg-transparent sm:p-0">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm sm:hidden">
+                      <span className="text-muted-foreground">
+                        {sellerCount} card
+                      </span>
+                      <div className="min-w-0 text-right">
+                        <span>
+                          Tổng:{" "}
+                          <strong className="text-base">
+                            {formatCurrency(sellerTotal)}
+                          </strong>
+                        </span>
+                        {needsQuote && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            + card cần báo giá
+                          </p>
+                        )}
+                      </div>
+                    </div>
                     <Button
+                      className="h-12 w-full sm:h-10 sm:w-auto"
+                      aria-label={`Gửi yêu cầu đến ${sellerDisplayName}`}
                       disabled={sendingSellers.has(seller)}
                       onClick={() => requestFromSeller(sellerItems)}
                     >
-                      {sendingSellers.has(seller)
-                        ? "Đang gửi..."
-                        : `Gửi yêu cầu đến ${sellerDisplayName}`}
+                      {sendingSellers.has(seller) ? (
+                        "Đang gửi..."
+                      ) : (
+                        <>
+                          <span className="sm:hidden">Gửi yêu cầu</span>
+                          <span className="hidden sm:inline">
+                            Gửi yêu cầu đến {sellerDisplayName}
+                          </span>
+                        </>
+                      )}
                     </Button>
                   </div>
                 </section>
@@ -386,22 +480,26 @@ export default function CartPage() {
         )}
       </div>
       {guestDialogOpen && (
-        <div
-          className="fixed inset-0 z-50 grid place-items-center px-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="guest-contact-title"
-        >
+        <div className="fixed inset-0 z-50 grid place-items-center p-4">
           <button
             type="button"
             className="absolute inset-0 bg-primary/40 backdrop-blur-[1px]"
             onClick={() => setGuestDialogOpen(false)}
             aria-label="Đóng"
+            tabIndex={-1}
+            aria-hidden="true"
           />
-          <Card className="relative z-10 w-full max-w-md p-5 shadow-2xl sm:p-6">
+          <Card
+            ref={guestDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="guest-contact-title"
+            aria-describedby="guest-contact-description"
+            className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain p-5 shadow-2xl sm:p-6"
+          >
             <button
               type="button"
-              className="absolute top-3 right-3 grid size-8 place-items-center rounded-full hover:bg-secondary"
+              className="absolute top-3 right-3 grid size-11 sm:size-8 place-items-center rounded-full hover:bg-secondary"
               onClick={() => setGuestDialogOpen(false)}
               aria-label="Đóng"
             >
@@ -409,12 +507,15 @@ export default function CartPage() {
             </button>
             <h2
               id="guest-contact-title"
-              className="pr-8 font-serif text-lg font-semibold"
+              className="pr-12 font-serif text-lg font-semibold [overflow-wrap:anywhere] sm:pr-8"
             >
               Gửi yêu cầu đến{" "}
               {pendingItems[0]?.sellerDisplayName || "người bán"}
             </h2>
-            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+            <p
+              id="guest-contact-description"
+              className="mt-3 text-sm leading-6 text-muted-foreground sm:mt-2 sm:text-xs sm:leading-5"
+            >
               Bạn có muốn tạo tài khoản để theo dõi và quản lý các yêu cầu mua
               dễ dàng hơn không? Nếu tiếp tục với tư cách khách, bạn sẽ cần chủ
               động liên lạc với người bán.
@@ -423,6 +524,7 @@ export default function CartPage() {
               <Button
                 type="button"
                 variant="outline"
+                className="min-h-12 whitespace-normal sm:min-h-10"
                 disabled={sendingSellers.has(pendingItems[0]?.seller ?? "")}
                 onClick={() => void sendRequest(pendingItems)}
               >
@@ -430,7 +532,7 @@ export default function CartPage() {
               </Button>
               <Link
                 href="/register?next=/cart"
-                className={buttonVariants()}
+                className={cn(buttonVariants(), "min-h-12 sm:min-h-10")}
                 onClick={() => setGuestDialogOpen(false)}
               >
                 Tạo tài khoản

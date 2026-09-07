@@ -4,10 +4,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { AccountLink } from "@/components/account-link";
+import { SiteHeader } from "@/components/site-header";
 import { formatCurrency } from "@/lib/currency";
 import { getDb } from "@/lib/db";
-import { BrandLogo } from "@/components/brand-logo";
 import { HomeCollectionCta } from "@/components/home-collection-cta";
 
 export const dynamic = "force-dynamic";
@@ -144,18 +143,7 @@ export default async function Home() {
   return (
     <main className="paper-grid min-h-dvh overflow-x-hidden">
       <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5 py-5 sm:px-8 lg:py-7">
-        <div className="flex items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="flex items-center gap-3 text-sm font-extrabold tracking-[0.16em]"
-          >
-            <BrandLogo />
-            RIPBAO
-          </Link>
-          <div className="flex justify-self-end gap-2">
-            <AccountLink />
-          </div>
-        </div>
+        <SiteHeader />
 
         <section className="grid flex-1 items-center gap-8 py-5 lg:grid-cols-[1.05fr_.95fr] lg:gap-14 lg:py-2">
           <div>
@@ -178,9 +166,9 @@ export default async function Home() {
                 Tìm
               </button>
             </form>
-            <div className="mb-4 flex items-end justify-between">
+            <div className="mt-7 mb-6 flex items-end justify-between">
               <div>
-                <h1 className="font-serif text-2xl font-semibold leading-none tracking-[-0.02em] text-[#5f793f]">
+                <h1 className="font-serif text-xl font-extrabold leading-tight tracking-[-0.02em] text-[#5f793f]">
                   Khám phá bộ sưu tập
                 </h1>
               </div>
@@ -256,7 +244,10 @@ export default async function Home() {
         <footer className="flex items-center justify-between gap-4 border-t pt-3 text-[9px] text-muted-foreground">
           <p>© 2026 Ripbao · Không liên kết với Riot Games</p>
           <p className="text-right">
-            Special thank to AppleMeoMeo,hodu2k and ThermalCoal
+            <span className="block">Special thanks to</span>
+            <span className="block">AppleMeoMeo</span>
+            <span className="block">hodu2k</span>
+            <span className="block">ThermalCoal</span>
           </p>
         </footer>
       </div>

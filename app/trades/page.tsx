@@ -237,7 +237,7 @@ export default function TradesPage() {
         <SiteHeader />
         <div className="py-7">
           <PageTitle icon={Handshake}>Giao dịch</PageTitle>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
             Yêu cầu mua và bán của bạn
           </p>
         </div>
@@ -401,9 +401,9 @@ export default function TradesPage() {
                             </Button>
                           )}
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            className="text-destructive"
+                            className="border-destructive/50 text-destructive hover:border-destructive hover:bg-destructive/10"
                             disabled={busy !== null}
                             onClick={() => act(trade, "cancel")}
                           >

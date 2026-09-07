@@ -43,23 +43,23 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="paper-grid relative grid h-[100svh] place-items-center overflow-hidden px-5 py-4 sm:py-6">
+    <main className="paper-grid auth-page auth-login-page relative grid h-[100svh] place-items-center overflow-hidden px-4 py-6 sm:px-6 sm:py-8">
       <div className="pointer-events-none absolute -top-28 -right-24 size-80 rounded-full bg-accent/25 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-32 -left-20 size-96 rounded-full bg-[#cadde2]/45 blur-3xl" />
 
-      <div className="login-panel relative w-full max-w-[420px]">
-        <Card className="border-primary/15 bg-card/95 shadow-[0_24px_70px_rgba(29,58,43,.12)] backdrop-blur-sm">
-          <CardContent className="login-card-content p-5 sm:p-7">
+      <div className="auth-panel relative w-full max-w-[420px]">
+        <Card className="auth-card border-primary/15 bg-card/95 shadow-[0_24px_70px_rgba(29,58,43,.12)] backdrop-blur-sm">
+          <CardContent className="auth-card-content p-5 sm:p-7">
             <Link
               href="/"
-              className="login-brand mb-5 flex w-fit items-center gap-3 text-sm font-extrabold tracking-[0.16em] sm:mb-6"
+              className="auth-brand mb-5 flex w-fit items-center gap-3 text-sm font-extrabold tracking-[0.16em] sm:mb-6"
             >
               <BrandLogo />
               RIPBAO
             </Link>
 
             <form
-              className="login-form flex flex-col gap-4"
+              className="auth-form flex flex-col gap-4"
               onSubmit={handleSubmit}
               onChange={() => error && setError("")}
             >
@@ -129,7 +129,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <p className="login-register mt-4 text-center text-[10px] text-muted-foreground sm:mt-5">
+        <p className="auth-switch mt-4 text-center text-xs text-muted-foreground sm:mt-5">
           Chưa có tài khoản?{" "}
           <Link
             href="/register"

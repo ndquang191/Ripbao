@@ -63,7 +63,7 @@ export function AddCardDrawer(props: {
             <h2 id="drawer-title" className="font-serif text-lg font-bold">
               Thêm card
             </h2>
-            <p className="text-[10px] text-muted-foreground">
+            <p className="hidden text-[10px] text-muted-foreground sm:block">
               Tìm và thêm nhiều card vào bản nháp.
             </p>
           </div>

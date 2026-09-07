@@ -170,7 +170,7 @@ export default async function SearchPage({
                 {query ? `Kết quả cho “${query}”` : "Tìm card đang bán"}
               </h1>
               {query && (
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
                   {collections.length} collection · {matchingCards} lựa chọn phù
                   hợp
                 </p>

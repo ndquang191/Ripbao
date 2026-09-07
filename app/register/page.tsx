@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BrandLogo } from "@/components/brand-logo";
@@ -53,34 +53,35 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="paper-grid grid min-h-[100svh] place-items-center px-5 py-8">
-      <div className="w-full max-w-[460px]">
-        <Link
-          href="/login"
-          className="mb-4 inline-flex items-center gap-2 text-xs font-bold text-muted-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          Đăng nhập
-        </Link>
-        <Card>
-          <CardContent className="p-6 sm:p-7">
-            <div className="flex items-center gap-3">
-              <Link href="/" aria-label="Về trang chủ" className="shrink-0">
-                <BrandLogo className="size-8" />
-              </Link>
-              <h1 className="font-serif text-xl font-semibold">
-                Tạo tài khoản
-              </h1>
-            </div>
+    <main className="paper-grid auth-page relative grid min-h-[100svh] place-items-center overflow-x-hidden px-4 py-6 sm:px-6 sm:py-8">
+      <div className="pointer-events-none absolute -top-28 -right-24 size-80 rounded-full bg-accent/25 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -left-20 size-96 rounded-full bg-[#cadde2]/45 blur-3xl" />
+
+      <div className="auth-panel relative w-full max-w-[460px]">
+        <Card className="auth-card border-primary/15 bg-card/95 shadow-[0_24px_70px_rgba(29,58,43,.12)] backdrop-blur-sm">
+          <CardContent className="auth-card-content p-5 sm:p-7">
+            <Link
+              href="/"
+              className="auth-brand mb-5 flex w-fit items-center gap-3 text-sm font-extrabold tracking-[0.16em] sm:mb-6"
+            >
+              <BrandLogo />
+              RIPBAO
+            </Link>
+            <h1 className="font-serif text-xl font-semibold sm:text-2xl">
+              Tạo tài khoản
+            </h1>
+            <p className="mt-1 hidden text-xs leading-5 text-muted-foreground sm:block">
+              Tạo hồ sơ để lưu bộ sưu tập và trao đổi card.
+            </p>
             <form
               onSubmit={handleSubmit}
               onChange={() => error && setError("")}
-              className="mt-4 flex flex-col gap-3"
+              className="auth-form mt-5 flex flex-col gap-3.5"
             >
               <label className="flex flex-col gap-1.5 text-xs font-bold">
                 Username
                 <Input
-                  className="text-base sm:text-sm"
+                  className="h-11 bg-background/70 text-base sm:text-sm"
                   name="username"
                   required
                   minLength={3}
@@ -92,7 +93,7 @@ export default function RegisterPage() {
               <label className="flex flex-col gap-1.5 text-xs font-bold">
                 Tên hiển thị
                 <Input
-                  className="text-base sm:text-sm"
+                  className="h-11 bg-background/70 text-base sm:text-sm"
                   name="displayName"
                   required
                   autoComplete="name"
@@ -101,7 +102,7 @@ export default function RegisterPage() {
               <label className="flex flex-col gap-1.5 text-xs font-bold">
                 Facebook
                 <Input
-                  className="text-base sm:text-sm"
+                  className="h-11 bg-background/70 text-base sm:text-sm"
                   name="facebookUrl"
                   type="url"
                   placeholder="https://facebook.com/..."
@@ -110,7 +111,7 @@ export default function RegisterPage() {
               <label className="flex flex-col gap-1.5 text-xs font-bold">
                 Mật khẩu
                 <Input
-                  className="text-base sm:text-sm"
+                  className="h-11 bg-background/70 text-base sm:text-sm"
                   name="password"
                   type="password"
                   required
@@ -121,7 +122,7 @@ export default function RegisterPage() {
               <label className="flex flex-col gap-1.5 text-xs font-bold">
                 Xác nhận mật khẩu
                 <Input
-                  className="text-base sm:text-sm"
+                  className="h-11 bg-background/70 text-base sm:text-sm"
                   name="confirmPassword"
                   type="password"
                   required
@@ -148,6 +149,15 @@ export default function RegisterPage() {
             </form>
           </CardContent>
         </Card>
+        <p className="auth-switch mt-4 text-center text-xs text-muted-foreground sm:mt-5">
+          Đã có tài khoản?{" "}
+          <Link
+            href="/login"
+            className="font-bold text-foreground underline underline-offset-4"
+          >
+            Đăng nhập
+          </Link>
+        </p>
       </div>
     </main>
   );

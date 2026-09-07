@@ -22,7 +22,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi">
-      <body>
+      <body className="mobile-type-scale">
         <ToastProvider>
           <CartProvider>{children}</CartProvider>
         </ToastProvider>

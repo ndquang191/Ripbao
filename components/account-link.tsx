@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useId, useState } from "react";
 import Link from "next/link";
-import { Handshake, LibraryBig, LogOut, Settings, X } from "lucide-react";
+import { Handshake, LibraryBig, LogIn, LogOut, Settings, X } from "lucide-react";
 import { CartLink } from "@/components/cart-link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ import {
 } from "@/lib/dropdown-coordination";
 
 export function AccountLink({ className }: { className?: string }) {
+  const mobileControl =
+    "max-sm:size-11 max-sm:shrink-0 max-sm:p-0 max-sm:[&>svg]:size-5";
   const { sessionUser, setSessionUser } = useCart();
   const username = sessionUser?.username ?? null;
   const [profileOpen, setProfileOpen] = useState(false);
@@ -122,13 +124,24 @@ export function AccountLink({ className }: { className?: string }) {
 
   if (!username) {
     return (
-      <div className={cn("flex items-center gap-1.5", className)}>
-        <CartLink />
+      <div
+        className={cn(
+          "flex items-center gap-1.5 max-sm:shrink-0 max-sm:gap-1",
+          className,
+        )}
+      >
+        <CartLink className={mobileControl} />
         <Link
           href="/login"
-          className={buttonVariants({ variant: "outline", size: "sm" })}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            mobileControl,
+          )}
+          aria-label="Đăng nhập"
+          title="Đăng nhập"
         >
-          Đăng nhập
+          <LogIn className="size-5 sm:hidden" />
+          <span className="hidden sm:inline">Đăng nhập</span>
         </Link>
       </div>
     );
@@ -136,23 +149,37 @@ export function AccountLink({ className }: { className?: string }) {
 
   if (sessionUser?.isGuest) {
     return (
-      <div className={cn("flex items-center gap-1.5", className)}>
+      <div
+        className={cn(
+          "flex items-center gap-1.5 max-sm:shrink-0 max-sm:gap-1",
+          className,
+        )}
+      >
         <Link
           href="/trades"
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
             "px-2.5",
+            mobileControl,
           )}
+          aria-label="Giao dịch"
+          title="Giao dịch"
         >
           <Handshake className="size-3.5" />
-          Giao dịch
+          <span className="hidden sm:inline">Giao dịch</span>
         </Link>
-        <CartLink />
+        <CartLink className={mobileControl} />
         <Link
           href="/login"
-          className={buttonVariants({ variant: "outline", size: "sm" })}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            mobileControl,
+          )}
+          aria-label="Đăng nhập"
+          title="Đăng nhập"
         >
-          Đăng nhập
+          <LogIn className="size-5 sm:hidden" />
+          <span className="hidden sm:inline">Đăng nhập</span>
         </Link>
       </div>
     );
@@ -160,13 +187,20 @@ export function AccountLink({ className }: { className?: string }) {
 
   return (
     <>
-      <div className={cn("flex items-center gap-1.5", className)}>
+      <div
+        className={cn(
+          "flex items-center gap-1.5 max-sm:shrink-0 max-sm:gap-1",
+          className,
+        )}
+      >
         <Link
           href="/trades"
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
             "relative px-2.5",
+            mobileControl,
           )}
+          aria-label={pendingTrades > 0 ? `Giao dịch, ${pendingTrades} yêu cầu đang chờ` : "Giao dịch"}
           title="Giao dịch"
         >
           <Handshake className="size-3.5" />
@@ -177,14 +211,15 @@ export function AccountLink({ className }: { className?: string }) {
             </span>
           )}
         </Link>
-        <CartLink />
-        <div className="relative flex h-8 items-center">
+        <CartLink className={mobileControl} />
+        <div className="relative flex h-8 items-center max-sm:h-11">
           <button
             type="button"
             onClick={() => setAccountMenuOpen((open) => !open)}
             className={cn(
               buttonVariants({ variant: "outline", size: "icon" }),
               "group size-8 cursor-pointer overflow-hidden rounded-md p-0 hover:border-primary/50 hover:bg-secondary hover:shadow-md",
+              mobileControl,
             )}
             aria-label={`Mở menu của ${displayName}`}
             aria-expanded={accountMenuOpen}
@@ -205,7 +240,10 @@ export function AccountLink({ className }: { className?: string }) {
                 aria-label="Đóng menu tài khoản"
               />
               <div
-                className="absolute right-0 top-full z-50 mt-2 w-44 rounded-md border bg-card p-1.5 shadow-xl"
+                className={cn(
+                  "absolute right-0 top-full z-50 mt-2 w-44 rounded-md border bg-card p-1.5 shadow-xl",
+                  "max-sm:w-52 max-sm:[&_[role=menuitem]]:min-h-11 max-sm:[&_[role=menuitem]]:text-sm",
+                )}
                 role="menu"
               >
                 <Link
