@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db";
 
 type ListingInput = {
   cardId?: string;
+  finish?: "nonfoil" | "foil";
   quantity?: number;
   minPrice?: number;
   tcgMultiplier?: number;
@@ -15,7 +16,7 @@ export async function GET() {
     return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
   const sql = getDb();
   const items = await sql`
-    SELECT listings.card_id AS "cardId", listings.quantity,
+    SELECT listings.card_id AS "cardId", listings.quantity, listings.finish,
       listings.min_price_vnd AS "minPrice",
       listings.tcg_multiplier::float8 AS "tcgMultiplier",
       cards.name,
@@ -41,9 +42,15 @@ export async function PUT(request: Request) {
   const body = (await request.json().catch(() => null)) as {
     items?: ListingInput[];
   } | null;
-  const items = (body?.items ?? [])
+  if (!Array.isArray(body?.items) || body.items.some((item) =>
+    !item || (item.finish !== undefined && item.finish !== "nonfoil" && item.finish !== "foil")
+  )) {
+    return NextResponse.json({ error: "Loại foil không hợp lệ." }, { status: 400 });
+  }
+  const items = body.items
     .map((item) => ({
       card_id: String(item.cardId ?? ""),
+      finish: item.finish ?? "nonfoil",
       quantity: Math.max(0, Math.floor(Number(item.quantity) || 0)),
       min_price_vnd: Math.max(0, Math.round(Number(item.minPrice) || 0)),
       tcg_multiplier: Math.max(0, Number(item.tcgMultiplier) || 0.9),
@@ -54,9 +61,9 @@ export async function PUT(request: Request) {
   await sql.transaction((tx) => [
     tx`UPDATE listings SET is_active = false, updated_at = now() WHERE user_id = ${user.id}`,
     tx`
-      INSERT INTO listings (user_id, card_id, quantity, min_price_vnd, tcg_multiplier, is_active)
-      SELECT ${user.id}, item.card_id, item.quantity, item.min_price_vnd, item.tcg_multiplier, true
-      FROM jsonb_to_recordset(${payload}::jsonb) AS item(card_id text, quantity integer, min_price_vnd bigint, tcg_multiplier numeric)
+      INSERT INTO listings (user_id, card_id, finish, quantity, min_price_vnd, tcg_multiplier, is_active)
+      SELECT ${user.id}, item.card_id, item.finish, item.quantity, item.min_price_vnd, item.tcg_multiplier, true
+      FROM jsonb_to_recordset(${payload}::jsonb) AS item(card_id text, finish text, quantity integer, min_price_vnd bigint, tcg_multiplier numeric)
       JOIN cards ON cards.id = item.card_id AND cards.is_active
       ON CONFLICT (user_id, card_id, finish, condition) DO UPDATE SET
         quantity = EXCLUDED.quantity,

@@ -13,7 +13,7 @@ import {
   uniqueCards,
 } from "../_lib/collection-utils";
 import { type CardData, type Edit } from "../_lib/models";
-import { CardImage, QuantityInput, SearchBox } from "./editor-inputs";
+import { CardImage, FinishInput, QuantityInput, SearchBox } from "./editor-inputs";
 
 export function AddCardDrawer(props: {
   savedIds: Set<string>;
@@ -133,6 +133,15 @@ export function AddCardDrawer(props: {
                     >
                       {card.domains.join(" · ") || "Không có Domain"}
                     </p>
+                    <FinishInput
+                      value={props.draft[card.id]?.finish ?? "nonfoil"}
+                      name={card.name}
+                      set={(finish) => props.updateCard(card.id, {
+                        finish,
+                        minPrice: props.draft[card.id]?.minPrice ?? defaultMin(card.rarity),
+                        tcgMultiplier: props.draft[card.id]?.tcgMultiplier ?? defaultMultiplier(card.rarity),
+                      })}
+                    />
                     <div className="mt-2 flex items-center justify-between">
                       <QuantityInput
                         value={quantity}

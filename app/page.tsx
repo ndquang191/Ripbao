@@ -8,6 +8,7 @@ import { AccountLink } from "@/components/account-link";
 import { formatCurrency } from "@/lib/currency";
 import { getDb } from "@/lib/db";
 import { BrandLogo } from "@/components/brand-logo";
+import { HomeCollectionCta } from "@/components/home-collection-cta";
 
 export const dynamic = "force-dynamic";
 
@@ -245,27 +246,7 @@ export default async function Home() {
                 </Card>
               )}
             </div>
-            <Card className="mt-2.5 border-dashed bg-secondary/75">
-              <CardContent className="flex items-center justify-between gap-5 p-3.5">
-                <div>
-                  <strong className="text-sm">
-                    Bạn cũng có một bộ sưu tập?
-                  </strong>
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">
-                    Tạo trang riêng và chia sẻ card của bạn.
-                  </p>
-                </div>
-                <Link
-                  href="/register"
-                  className={cn(
-                    buttonVariants({ variant: "accent", size: "sm" }),
-                    "shrink-0",
-                  )}
-                >
-                  Tạo miễn phí <ArrowUpRight className="size-3.5" />
-                </Link>
-              </CardContent>
-            </Card>
+            <HomeCollectionCta />
           </div>
           <div className="hidden lg:block">
             <CardArtwork featuredCard={featuredCard} />

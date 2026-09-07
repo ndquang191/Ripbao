@@ -24,6 +24,8 @@ import {
 } from "../_lib/models";
 import { useUnsavedChanges } from "./use-unsaved-changes";
 
+const DEFAULT_SORT: Sort = { key: "name", direction: "asc" };
+
 export function useCollectionEditor() {
   const [username, setUsername] = useState("");
   const [saved, setSaved] = useState<Record<string, Edit>>({});
@@ -39,7 +41,11 @@ export function useCollectionEditor() {
     "idle",
   );
   const [pricingOpen, setPricingOpen] = useState(false);
-  const [sort, setSort] = useState<Sort>({ key: "name", direction: "asc" });
+  const [domainSorts, setDomainSorts] = useState<Record<string, Sort>>({});
+  const getSort = useCallback(
+    (domain: string) => domainSorts[domain] ?? DEFAULT_SORT,
+    [domainSorts],
+  );
   const [minimums, setMinimums] = useState<Record<string, number>>(() =>
     Object.fromEntries(
       Object.entries(currencyConfig.quickMinimums).map(([rarity, value]) => [
@@ -65,6 +71,7 @@ export function useCollectionEditor() {
           items.map((item) => [
             item.cardId,
             {
+              finish: item.finish ?? "nonfoil",
               quantity: item.quantity,
               minPrice: Number(item.minPrice),
               tcgMultiplier: Number(item.tcgMultiplier),
@@ -127,9 +134,9 @@ export function useCollectionEditor() {
       .sort(([a], [b]) => domainRank(a) - domainRank(b))
       .map(([domain, list]) => [
         domain,
-        list.sort((a, b) => compareBySort(a, b, draft, sort)),
+        list.sort((a, b) => compareBySort(a, b, draft, getSort(domain))),
       ]);
-  }, [draft, sort, visibleCards]);
+  }, [draft, getSort, visibleCards]);
   const positiveEdits = Object.values(draft).filter(
     (edit) => edit.quantity > 0,
   );
@@ -147,18 +154,24 @@ export function useCollectionEditor() {
       ...Object.fromEntries(incoming.map((card) => [card.id, card])),
     }));
   }, []);
-  const changeSort = useCallback((key: Sort["key"]) => {
-    setSort((current) => ({
-      key,
-      direction:
-        current.key === key
-          ? current.direction === "asc"
-            ? "desc"
-            : "asc"
-          : key === "name"
-            ? "asc"
-            : "desc",
-    }));
+  const changeSort = useCallback((domain: string, key: Sort["key"]) => {
+    setDomainSorts((current) => {
+      const sort = current[domain] ?? DEFAULT_SORT;
+      return {
+        ...current,
+        [domain]: {
+          key,
+          direction:
+            sort.key === key
+              ? sort.direction === "asc"
+                ? "desc"
+                : "asc"
+              : key === "name"
+                ? "asc"
+                : "desc",
+        },
+      };
+    });
   }, []);
   const clearFilters = useCallback(() => {
     setQuery("");
@@ -237,7 +250,7 @@ export function useCollectionEditor() {
     saveStatus,
     pricingOpen,
     setPricingOpen,
-    sort,
+    getSort,
     minimums,
     multipliers,
     setMinimum,

@@ -5,7 +5,7 @@ import { Minus, Plus, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { currencyConfig } from "@/lib/currency";
 import { cn } from "@/lib/utils";
-import { type CardData } from "../_lib/models";
+import { type CardData, type Finish } from "../_lib/models";
 
 export function SearchBox({
   value,
@@ -170,5 +170,26 @@ export function CardImage({
         />
       )}
     </div>
+  );
+}
+
+export function FinishInput({ value, name, set }: {
+  value: Finish;
+  name: string;
+  set: (value: Finish) => void;
+}) {
+  return (
+    <label className="mt-2 flex w-fit items-center gap-2 text-[10px] text-muted-foreground">
+      Loại
+      <select
+        aria-label={`Loại foil của ${name}`}
+        value={value}
+        onChange={(event) => set(event.target.value as Finish)}
+        className="h-8 rounded-sm border bg-background px-2 text-xs font-medium text-foreground"
+      >
+        <option value="nonfoil">Không foil</option>
+        <option value="foil">Foil</option>
+      </select>
+    </label>
   );
 }

@@ -252,7 +252,7 @@ export function Collection({
       </div>
 
       {filteredCards.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {filteredCards.map((card) => {
             const cartItem = items.find(
               (item) => item.key === `${sellerKey}:${card.id}`,
@@ -402,6 +402,12 @@ export function Collection({
                         </h3>
                       </div>
                     </div>
+                    <span className={cn(
+                      "mt-2 inline-block rounded-sm border px-1.5 py-0.5 text-[10px] font-bold",
+                      card.finish === "Foil" ? "border-primary/30 bg-accent/40 text-primary" : "text-muted-foreground",
+                    )}>
+                      {card.finish === "Foil" ? "Foil" : "Không foil"}
+                    </span>
                     <div className="mt-2 flex items-center justify-between border-t pt-1.5">
                       <strong className="font-serif text-base">
                         {card.price}

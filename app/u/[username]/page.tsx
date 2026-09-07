@@ -106,8 +106,13 @@ export default async function SellerPage({
 
         <section className="border-b py-7">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <PageTitle icon={UserRound}>{displayName}</PageTitle>
+            <div className="inline-flex max-w-full items-center gap-3 rounded-lg border border-[#8ba55e] border-l-4 bg-[#edf3e5] px-4 py-3 shadow-sm">
+              <PageTitle
+                icon={UserRound}
+                className="min-w-0 [&_h1]:text-[#40572b] [&_h1]:[overflow-wrap:anywhere]"
+              >
+                {displayName}
+              </PageTitle>
               {facebookUrl && (
                 <a
                   href={facebookUrl}
@@ -115,7 +120,7 @@ export default async function SellerPage({
                   rel="noreferrer"
                   className={cn(
                     buttonVariants({ variant: "outline", size: "icon" }),
-                    "size-8",
+                    "size-8 shrink-0",
                   )}
                   aria-label={`Mở Facebook của ${displayName}`}
                   title="Mở Facebook"
@@ -123,9 +128,6 @@ export default async function SellerPage({
                   <FacebookIcon />
                 </a>
               )}
-              <span className="rounded-sm bg-accent px-2 py-1 text-[9px] font-extrabold tracking-wider text-accent-foreground uppercase">
-                Đang bán
-              </span>
             </div>
           </div>
           <div className="mt-4">

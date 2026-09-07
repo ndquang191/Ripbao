@@ -22,6 +22,7 @@ export function fromListing(x: ApiListing): CardData {
 
 export function editOf(x?: Partial<Edit>): Edit {
   return {
+    finish: x?.finish ?? "nonfoil",
     quantity: x?.quantity ?? 0,
     minPrice: Number(x?.minPrice) || 0,
     tcgMultiplier: Number(x?.tcgMultiplier) || 0.9,
@@ -33,6 +34,7 @@ export function sameEdits(a: Record<string, Edit>, b: Record<string, Edit>) {
     const x = editOf(a[id]);
     const y = editOf(b[id]);
     return (
+      x.finish === y.finish &&
       x.quantity === y.quantity &&
       x.minPrice === y.minPrice &&
       x.tcgMultiplier === y.tcgMultiplier

@@ -95,8 +95,8 @@ export default function CollectionPage() {
                 cards={cards}
                 draft={editor.draft}
                 saved={editor.saved}
-                sort={editor.sort}
-                changeSort={editor.changeSort}
+                sort={editor.getSort(domain)}
+                changeSort={(key) => editor.changeSort(domain, key)}
                 updateCard={editor.updateCard}
               />
             ))}

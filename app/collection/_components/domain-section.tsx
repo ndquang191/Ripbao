@@ -6,6 +6,7 @@ import { domainColor, editOf, finalPrice } from "../_lib/collection-utils";
 import { type CardData, type Edit, type Sort } from "../_lib/models";
 import {
   CardImage,
+  FinishInput,
   MoneyInput,
   MultiplierInput,
   QuantityInput,
@@ -130,6 +131,11 @@ function CardRow(props: {
           <p className="mt-1 text-[9px] text-muted-foreground md:hidden">
             {card.set} · #{card.collectorNumber} · {card.rarity}
           </p>
+          <FinishInput
+            value={edit.finish}
+            name={card.name}
+            set={(finish) => props.updateCard(card.id, { finish })}
+          />
           {!edit.quantity && (
             <span className="mt-1 inline-block rounded-sm bg-destructive/10 px-1.5 py-.5 text-[9px] font-bold text-destructive">
               {props.wasSaved ? "Sẽ xóa khi lưu" : "Chưa thêm"}

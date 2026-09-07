@@ -11,7 +11,10 @@ export type CardData = {
   tcgPrice?: number;
 };
 
+export type Finish = "nonfoil" | "foil";
+
 export type ApiListing = {
+  finish: Finish;
   cardId: string;
   collectorNumber: number;
   name: string;
@@ -28,6 +31,7 @@ export type ApiListing = {
 };
 
 export type Edit = {
+  finish: Finish;
   quantity: number;
   minPrice: number;
   tcgMultiplier: number;
