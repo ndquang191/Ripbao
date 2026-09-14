@@ -254,7 +254,7 @@ export default function TradesPage() {
         <SiteHeader />
         <div className="py-5 sm:py-7">
           <PageTitle icon={Handshake}>Giao dịch</PageTitle>
-          <p className="mt-1 text-sm text-muted-foreground sm:text-xs">
+          <p className="mt-1 text-xs text-muted-foreground">
             Yêu cầu mua và bán của bạn
           </p>
         </div>
@@ -267,7 +267,7 @@ export default function TradesPage() {
             className="min-h-64 max-sm:[&>div]:p-5 max-sm:[&_p]:text-sm"
           >
             <Button
-              className="mt-4 min-h-11 w-full text-sm sm:min-h-0 sm:w-auto sm:text-xs"
+              className="mt-4 min-h-11 w-full text-[11px] sm:min-h-0 sm:w-auto sm:text-xs"
               size="sm"
               onClick={() => void load()}
             >
@@ -309,7 +309,7 @@ export default function TradesPage() {
                         ) : (
                           <Link
                             href={`/u/${trade.counterpartyUsername}`}
-                            className="min-w-0 truncate py-1 text-base font-bold hover:underline sm:py-0 sm:text-sm"
+                            className="min-w-0 truncate py-1 text-sm font-bold hover:underline sm:py-0"
                           >
                             {other}
                           </Link>
@@ -319,7 +319,7 @@ export default function TradesPage() {
                             href={facebookUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="grid size-10 shrink-0 place-items-center rounded-sm border bg-card text-sm font-black text-primary transition-colors hover:bg-secondary sm:size-6 sm:text-[10px]"
+                            className="grid size-10 shrink-0 place-items-center rounded-sm border bg-card text-xs font-black text-primary transition-colors hover:bg-secondary sm:size-6 sm:text-[10px]"
                             aria-label={`Mở Facebook của ${other}`}
                             title="Mở Facebook"
                           >
@@ -343,18 +343,18 @@ export default function TradesPage() {
                         <CardImagePreview
                           src={item.imageUrl}
                           alt={item.name}
-                          className="h-24 aspect-[469/655] sm:h-16"
+                          className="h-20 aspect-[469/655] sm:h-16"
                         />
                         <div className="min-w-0 flex-1">
-                          <p className="line-clamp-2 text-base leading-5 font-bold sm:truncate sm:text-xs sm:leading-4">
+                          <p className="line-clamp-2 text-sm leading-4 font-bold sm:truncate sm:text-xs">
                             {item.name}
                           </p>
-                          <p className="mt-1 text-xs leading-5 text-muted-foreground sm:mt-0 sm:text-[9px] sm:leading-normal">
+                          <p className="mt-1 text-[10px] leading-4 text-muted-foreground sm:mt-0 sm:text-[9px] sm:leading-normal">
                             {item.set} · {String(item.number).padStart(3, "0")}{" "}
                             · {item.finish === "foil" ? "Foil" : "Thường"} ·{" "}
                             {item.condition}
                           </p>
-                          <p className="mt-1 text-sm font-semibold sm:text-[10px]">
+                          <p className="mt-1 text-xs font-semibold sm:text-[10px]">
                             {Number(item.unitPrice)
                               ? formatCurrency(Number(item.unitPrice))
                               : "Liên hệ"}
@@ -376,7 +376,7 @@ export default function TradesPage() {
                             >
                               <Minus className="size-3" />
                             </button>
-                            <span className="min-w-10 flex-1 text-center text-sm font-bold sm:w-7 sm:min-w-0 sm:flex-none sm:text-[10px]">
+                            <span className="min-w-10 flex-1 text-center text-xs font-bold sm:w-7 sm:min-w-0 sm:flex-none sm:text-[10px]">
                               {item.quantity}
                             </span>
                             <button
@@ -395,7 +395,7 @@ export default function TradesPage() {
                             </button>
                           </div>
                         ) : (
-                          <strong className="absolute right-3 text-sm sm:static sm:text-xs">
+                          <strong className="absolute right-3 text-xs sm:static">
                             ×{item.quantity}
                           </strong>
                         )}
@@ -403,7 +403,7 @@ export default function TradesPage() {
                     ))}
                   </div>
                   <div className="flex flex-col gap-3 border-t bg-secondary/30 px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-sm sm:block sm:text-xs">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-xs sm:block">
                       <strong>{totalQuantity} lá</strong>
                       <span className="mx-1.5 text-muted-foreground">·</span>
                       Tổng tạm tính: <strong>{formatCurrency(total)}</strong>
@@ -415,7 +415,7 @@ export default function TradesPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="min-h-11 text-sm sm:min-h-0 sm:text-xs"
+                              className="min-h-11 text-[11px] sm:min-h-0 sm:text-xs"
                               disabled={busy !== null}
                               onClick={() => act(trade, "update")}
                             >
@@ -425,7 +425,7 @@ export default function TradesPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="min-h-11 border-destructive/50 text-sm text-destructive hover:border-destructive hover:bg-destructive/10 sm:min-h-0 sm:text-xs"
+                            className="min-h-11 border-destructive/50 text-[11px] text-destructive hover:border-destructive hover:bg-destructive/10 sm:min-h-0 sm:text-xs"
                             disabled={busy !== null}
                             onClick={() => act(trade, "cancel")}
                           >
@@ -434,7 +434,7 @@ export default function TradesPage() {
                           {editable && (
                             <Button
                               size="sm"
-                              className="col-span-2 min-h-11 text-sm sm:col-span-1 sm:min-h-0 sm:text-xs"
+                              className="col-span-2 min-h-11 text-[11px] sm:col-span-1 sm:min-h-0 sm:text-xs"
                               disabled={busy !== null}
                               onClick={() => act(trade, "complete")}
                             >
@@ -447,7 +447,7 @@ export default function TradesPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="col-span-2 min-h-11 whitespace-normal text-sm text-muted-foreground hover:text-destructive sm:col-span-1 sm:min-h-0 sm:text-xs"
+                          className="col-span-2 min-h-11 whitespace-normal text-[11px] text-muted-foreground hover:text-destructive sm:col-span-1 sm:min-h-0 sm:text-xs"
                           disabled={busy !== null}
                           onClick={() => void deleteTrade(trade)}
                         >
@@ -458,7 +458,7 @@ export default function TradesPage() {
                     </div>
                   </div>
                   {trade.buyerContactPhone && (
-                    <div className="border-t bg-[#edf3e5] px-3 py-3 text-sm sm:px-4 sm:py-2 sm:text-xs">
+                    <div className="border-t bg-[#edf3e5] px-3 py-3 text-xs sm:px-4 sm:py-2">
                       SĐT liên hệ:{" "}
                       <a
                         className="font-bold hover:underline"
@@ -475,7 +475,7 @@ export default function TradesPage() {
               <div className="flex justify-center pt-2">
                 <Button
                   variant="outline"
-                  className="min-h-11 w-full sm:w-auto"
+                  className="min-h-11 w-full text-[11px] sm:w-auto sm:text-xs"
                   disabled={loadingMore}
                   onClick={() => void load(page + 1, true)}
                 >

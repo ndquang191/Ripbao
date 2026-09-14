@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import {
   createSession,
@@ -8,14 +8,20 @@ import {
 } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user)
     return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
+  const requestedPage = Number(request.nextUrl.searchParams.get("page"));
+  const page =
+    Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const size = 10;
+  const offset = (page - 1) * size;
   const sql = getDb();
-  const rows = await sql`
+  const [rows, countRows] = await Promise.all([
+    sql`
     SELECT requests.id, requests.status, requests.created_at AS "createdAt",
-      NULL::text AS "buyerContactPhone",
+      requests.buyer_contact_phone AS "buyerContactPhone",
       requests.completed_at AS "completedAt", buyers.username AS buyer,
       buyers.facebook_url AS "buyerFacebookUrl", sellers.username AS seller,
       sellers.facebook_url AS "sellerFacebookUrl",
@@ -37,11 +43,27 @@ export async function GET() {
     LEFT JOIN trade_request_items AS items ON items.request_id = requests.id
     LEFT JOIN listings ON listings.id = items.listing_id
     LEFT JOIN cards ON cards.id = listings.card_id
-    WHERE requests.buyer_id = ${user.id} OR requests.seller_id = ${user.id}
+    WHERE (requests.buyer_id = ${user.id} AND requests.buyer_hidden_at IS NULL)
+      OR (requests.seller_id = ${user.id} AND requests.seller_hidden_at IS NULL)
     GROUP BY requests.id, buyers.id, sellers.id
     ORDER BY requests.created_at DESC
-  `;
-  return NextResponse.json({ requests: rows, username: user.username });
+    LIMIT ${size} OFFSET ${offset}
+  `,
+    sql`
+    SELECT count(*)::integer AS total
+    FROM trade_requests AS requests
+    WHERE (requests.buyer_id = ${user.id} AND requests.buyer_hidden_at IS NULL)
+      OR (requests.seller_id = ${user.id} AND requests.seller_hidden_at IS NULL)
+  `,
+  ]);
+  const total = Number(countRows[0]?.total ?? 0);
+  return NextResponse.json({
+    requests: rows,
+    username: user.username,
+    page,
+    pages: Math.ceil(total / size),
+    total,
+  });
 }
 
 export async function POST(request: Request) {
