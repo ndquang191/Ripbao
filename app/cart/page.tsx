@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Check, Copy, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useCart } from "@/components/cart-provider";
+import { type CartItem, useCart } from "@/components/cart-provider";
 import { CardImagePreview } from "@/components/card-image-preview";
 import { EmptyState } from "@/components/empty-state";
 import { SiteHeader } from "@/components/site-header";
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { formatCurrency, parseCurrency } from "@/lib/currency";
 import { saveGuestTrade } from "@/lib/guest-trades";
 import { useToast } from "@/components/toast";
+import { useModalDialog } from "@/app/collection/_hooks/use-modal-dialog";
 
 export default function CartPage() {
   const {
@@ -34,6 +35,7 @@ export default function CartPage() {
   const [guestDialogOpen, setGuestDialogOpen] = useState(false);
   const [pendingItems, setPendingItems] = useState<typeof items>([]);
   const [quantityLimitKey, setQuantityLimitKey] = useState<string | null>(null);
+  const [itemToRemove, setItemToRemove] = useState<CartItem | null>(null);
   const quantityLimitTimer = useRef<number | null>(null);
   const guestDialogRef = useRef<HTMLDivElement>(null);
 
@@ -375,7 +377,7 @@ export default function CartPage() {
                                   variant="ghost"
                                   size="icon"
                                   className="-mt-2 -mr-2 size-11 shrink-0 rounded-sm text-muted-foreground hover:text-destructive sm:absolute sm:top-1 sm:right-1 sm:z-10 sm:mt-0 sm:mr-0 sm:size-6 sm:bg-card/85 sm:shadow-sm sm:backdrop-blur"
-                                  onClick={() => removeItem(item.key)}
+                                  onClick={() => setItemToRemove(item)}
                                   aria-label={`Xoá ${item.name}`}
                                 >
                                   <Trash2 className="size-4 sm:size-3" />
@@ -537,6 +539,73 @@ export default function CartPage() {
           </Card>
         </div>
       )}
+      {itemToRemove && (
+        <RemoveItemDialog
+          item={itemToRemove}
+          cancel={() => setItemToRemove(null)}
+          confirm={() => {
+            removeItem(itemToRemove.key);
+            setItemToRemove(null);
+          }}
+        />
+      )}
     </main>
+  );
+}
+
+function RemoveItemDialog({
+  item,
+  cancel,
+  confirm,
+}: {
+  item: CartItem;
+  cancel: () => void;
+  confirm: () => void;
+}) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useModalDialog(dialogRef, cancel);
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center p-4">
+      <button
+        type="button"
+        className="absolute inset-0 bg-primary/35 backdrop-blur-[1px]"
+        onClick={cancel}
+        aria-label="Huỷ xoá sản phẩm"
+      />
+      <section
+        ref={dialogRef}
+        tabIndex={-1}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="remove-item-title"
+        aria-describedby="remove-item-description"
+        className="relative z-10 w-full max-w-xs rounded-sm border bg-card p-4 shadow-2xl outline-none"
+      >
+        <h2 id="remove-item-title" className="font-serif text-base font-semibold">
+          Xoá khỏi giỏ?
+        </h2>
+        <p
+          id="remove-item-description"
+          className="mt-1.5 line-clamp-2 text-xs text-muted-foreground"
+        >
+          {item.name}
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={cancel}>
+            Huỷ
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            className="bg-destructive text-white hover:bg-destructive/85"
+            onClick={confirm}
+          >
+            <Trash2 className="size-3.5" />
+            Xoá
+          </Button>
+        </div>
+      </section>
+    </div>
   );
 }

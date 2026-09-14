@@ -317,7 +317,10 @@ export function Collection({
                     setPreviewCard(card);
                   }
                 }}
-                className="group relative flex h-full cursor-default flex-col overflow-visible transition-all hover:-translate-y-1 hover:border-[#8ba55e] hover:shadow-lg"
+                className={cn(
+                  "group relative flex h-full cursor-default flex-col overflow-visible transition-all hover:z-20 hover:-translate-y-1 hover:border-[#8ba55e] hover:shadow-lg focus-within:z-20",
+                  cartItem && "z-30 hover:z-30 focus-within:z-30",
+                )}
               >
                 {cartItem && (
                   <button
@@ -354,7 +357,7 @@ export function Collection({
                   {!isOwner && (
                     <div className="pointer-events-none absolute inset-x-0 bottom-[30%] z-20 hidden justify-center px-2 opacity-0 transition-all duration-200 group-hover:opacity-100 group-focus-within:opacity-100 sm:flex">
                       {cartItem ? (
-                        <div className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-white/70 bg-card/95 p-1 shadow-xl backdrop-blur-md">
+                        <div className="pointer-events-auto flex items-center gap-0.5 rounded-sm border border-white/70 bg-card/95 p-1 shadow-xl backdrop-blur-md">
                           <button
                             type="button"
                             onClick={(event) => {
@@ -364,7 +367,7 @@ export function Collection({
                                 cartItem.quantity - 1,
                               );
                             }}
-                            className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+                            className="grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
                             aria-label="Giảm số lượng"
                           >
                             <Minus className="size-3" />
@@ -379,7 +382,7 @@ export function Collection({
                                 cartItem.quantity + 1,
                               );
                             }}
-                            className="min-w-8 rounded-full px-1 text-center text-[10px] font-black hover:bg-secondary disabled:cursor-default disabled:opacity-60"
+                            className="min-w-8 rounded-sm px-1 text-center text-[10px] font-black hover:bg-secondary disabled:cursor-default disabled:opacity-60"
                             aria-label={`Tăng số lượng ${card.name}`}
                           >
                             {cartItem.quantity}/{card.quantity}
@@ -394,7 +397,7 @@ export function Collection({
                                 cartItem.quantity + 1,
                               );
                             }}
-                            className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
+                            className="grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
                             aria-label="Tăng số lượng"
                           >
                             <Plus className="size-3" />
@@ -405,7 +408,7 @@ export function Collection({
                           type="button"
                           variant="accent"
                           size="icon"
-                          className="pointer-events-auto size-10 cursor-pointer rounded-full border border-white/70 shadow-xl transition-transform hover:scale-105"
+                          className="pointer-events-auto size-10 cursor-pointer rounded-sm border border-white/70 shadow-xl transition-transform hover:scale-105"
                           aria-label={`Thêm ${card.name} vào giỏ`}
                           title="Thêm vào giỏ"
                           onClick={(event) => {
