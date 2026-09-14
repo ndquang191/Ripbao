@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Minus, Plus, Search, X } from "lucide-react";
 import { CardImagePreview } from "@/components/card-image-preview";
+import { FilterDropdown } from "@/components/domain-filter";
 import { Input } from "@/components/ui/input";
 import { currencyConfig } from "@/lib/currency";
 import { cn } from "@/lib/utils";
@@ -164,23 +165,25 @@ export function CardImage({
   );
 }
 
+const FINISH_LABELS = ["Thường", "Foil"] as const;
+
 export function FinishInput({ value, name, set }: {
   value: Finish;
   name: string;
   set: (value: Finish) => void;
 }) {
   return (
-    <label className="mt-2 flex w-fit items-center gap-2 text-[10px] text-muted-foreground">
-      Loại
-      <select
-        aria-label={`Loại foil của ${name}`}
-        value={value}
-        onChange={(event) => set(event.target.value as Finish)}
-        className="h-8 rounded-sm border bg-background px-2 text-xs font-medium text-foreground"
-      >
-        <option value="nonfoil">Không foil</option>
-        <option value="foil">Foil</option>
-      </select>
-    </label>
+    <div className="mt-2 flex w-fit items-center gap-2 text-[10px] text-muted-foreground">
+      <span>Loại</span>
+      <FilterDropdown
+        label="Foil"
+        ariaLabel={`Loại foil của ${name}`}
+        value={value === "foil" ? "Foil" : "Thường"}
+        options={FINISH_LABELS}
+        onChange={(finish) => set(finish === "Foil" ? "foil" : "nonfoil")}
+        allowEmpty={false}
+        className="[&>summary]:min-w-24"
+      />
+    </div>
   );
 }

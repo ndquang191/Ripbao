@@ -8,7 +8,6 @@ import {
   validUsername,
 } from "@/lib/auth";
 import { getDb } from "@/lib/db";
-import { enforceRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 const defaultTradingOptions = [
   ["nexus-night", "Nexus Night", 0],
@@ -18,13 +17,6 @@ const defaultTradingOptions = [
 ] as const;
 
 export async function POST(request: Request) {
-  const rateLimit = await enforceRateLimit(request, {
-    scope: "auth-register",
-    limit: 5,
-    windowSeconds: 60 * 60,
-  });
-  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfter);
-
   const body = (await request.json().catch(() => null)) as Record<
     string,
     unknown

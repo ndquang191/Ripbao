@@ -6,16 +6,8 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { getDb } from "@/lib/db";
-import { enforceRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-  const rateLimit = await enforceRateLimit(request, {
-    scope: "auth-login",
-    limit: 10,
-    windowSeconds: 15 * 60,
-  });
-  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfter);
-
   const body = (await request.json().catch(() => null)) as Record<
     string,
     unknown

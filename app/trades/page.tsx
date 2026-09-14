@@ -351,7 +351,7 @@ export default function TradesPage() {
                           </p>
                           <p className="mt-1 text-xs leading-5 text-muted-foreground sm:mt-0 sm:text-[9px] sm:leading-normal">
                             {item.set} · {String(item.number).padStart(3, "0")}{" "}
-                            · {item.finish === "foil" ? "Foil" : "No Foil"} ·{" "}
+                            · {item.finish === "foil" ? "Foil" : "Thường"} ·{" "}
                             {item.condition}
                           </p>
                           <p className="mt-1 text-sm font-semibold sm:text-[10px]">

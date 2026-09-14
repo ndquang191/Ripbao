@@ -38,6 +38,7 @@ export function FilterDropdown({
   options,
   onChange,
   className,
+  ariaLabel,
   showDomainColors = false,
   allowEmpty = true,
 }: {
@@ -46,6 +47,7 @@ export function FilterDropdown({
   options: readonly string[];
   onChange: (value: string) => void;
   className?: string;
+  ariaLabel?: string;
   showDomainColors?: boolean;
   allowEmpty?: boolean;
 }) {
@@ -90,7 +92,10 @@ export function FilterDropdown({
       onToggle={closeOtherDropdowns}
       className={cn("group relative z-10 shrink-0 open:z-[100]", className)}
     >
-      <summary className="flex h-11 min-w-32 cursor-pointer list-none items-center gap-2 rounded-sm border border-[#9cad82] bg-card px-3 text-sm font-bold text-[#506b32] transition-colors hover:border-[#607d35] hover:bg-[#edf3e5] focus-visible:ring-[3px] focus-visible:ring-[#8ba55e]/30 focus-visible:outline-none sm:h-8 sm:px-2 sm:text-[10px] [&::-webkit-details-marker]:hidden">
+      <summary
+        aria-label={ariaLabel}
+        className="flex h-11 min-w-32 cursor-pointer list-none items-center gap-2 rounded-sm border border-[#9cad82] bg-card px-3 text-sm font-bold text-[#506b32] transition-colors hover:border-[#607d35] hover:bg-[#edf3e5] focus-visible:ring-[3px] focus-visible:ring-[#8ba55e]/30 focus-visible:outline-none sm:h-8 sm:px-2 sm:text-[10px] [&::-webkit-details-marker]:hidden"
+      >
         {showDomainColors && value && <DomainSwatch domain={value} />}
         <span className="min-w-0 flex-1 truncate">
           {value || `Tất cả ${label.toLocaleLowerCase("vi")}`}

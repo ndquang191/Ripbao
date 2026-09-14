@@ -7,7 +7,6 @@ import {
   type AuthUser,
 } from "@/lib/auth";
 import { getDb } from "@/lib/db";
-import { enforceRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
@@ -67,13 +66,6 @@ export async function POST(request: Request) {
   let user = await getCurrentUser();
   const sql = getDb();
   if (!user) {
-    const rateLimit = await enforceRateLimit(request, {
-      scope: "guest-trade",
-      limit: 10,
-      windowSeconds: 60 * 60,
-    });
-    if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfter);
-
     const guestId = randomBytes(4).toString("hex");
     const username = `guest_${guestId}`;
     const displayName = `Khách #${guestId.slice(0, 6).toUpperCase()}`;

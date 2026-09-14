@@ -28,11 +28,11 @@ export function DomainSection(props: {
   const color = domainColor(props.domain);
   return (
     <section
-      className="overflow-hidden rounded-sm border bg-card shadow-sm"
+      className="rounded-sm border bg-card shadow-sm"
       style={{ borderColor: color }}
     >
       <header
-        className="flex items-center justify-between px-3 py-2.5 text-white sm:py-1.5"
+        className="flex items-center justify-between rounded-t-sm px-3 py-2.5 text-white sm:py-1.5"
         style={{ backgroundColor: color }}
       >
         <h2 className="text-sm font-extrabold sm:text-xs">{props.domain}</h2>

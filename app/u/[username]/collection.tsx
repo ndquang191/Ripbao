@@ -439,7 +439,7 @@ export function Collection({
                           : "text-muted-foreground",
                       )}
                     >
-                      {card.finish === "Foil" ? "Foil" : "Không foil"}
+                      {card.finish === "Foil" ? "Foil" : "Thường"}
                     </span>
                     <div className="mt-2 flex items-center justify-between border-t pt-1.5">
                       <strong className="font-serif text-base">

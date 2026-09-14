@@ -261,7 +261,7 @@ export default async function SearchPage({
                             · {card.rarity}
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground sm:text-[10px]">
-                            {card.finish === "foil" ? "Foil" : "Non-foil"} ·{" "}
+                            {card.finish === "foil" ? "Foil" : "Thường"} ·{" "}
                             {card.condition} · SL {card.quantity}
                           </p>
                           <strong className="mt-auto text-sm text-[#5f793f] sm:text-xs">

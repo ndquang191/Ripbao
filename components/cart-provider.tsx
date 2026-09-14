@@ -98,7 +98,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             name: item.name,
             set: item.set,
             number: String(item.number).padStart(3, "0"),
-            finish: item.finish === "foil" ? "Foil" : "No Foil",
+            finish: item.finish === "foil" ? "Foil" : "Thường",
             condition: item.condition,
             price:
               Number(item.unitPrice) > 0

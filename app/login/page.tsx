@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BrandLogo } from "@/components/brand-logo";
@@ -122,8 +122,17 @@ export default function LoginPage() {
                 className="h-12 w-full"
                 disabled={submitting}
               >
-                {submitting ? "Đang đăng nhập..." : "Đăng nhập"}
-                <ArrowRight className="size-4" />
+                {submitting ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                    <span className="sr-only">Đang đăng nhập...</span>
+                  </>
+                ) : (
+                  <>
+                    Đăng nhập
+                    <ArrowRight className="size-4" />
+                  </>
+                )}
               </Button>
             </form>
           </CardContent>
