@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { apiErrorResponse } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -18,8 +19,6 @@ export async function GET() {
       domains: domains.map(({ value }) => value),
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to load card filters";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiErrorResponse("cards.filters", error);
   }
 }

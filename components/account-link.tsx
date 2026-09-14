@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Handshake,
   LibraryBig,
@@ -226,9 +227,11 @@ export function AccountLink({ className }: { className?: string }) {
             aria-expanded={accountMenuOpen}
             title="Tài khoản"
           >
-            <img
+            <Image
               src={`https://api.dicebear.com/10.x/critters/svg?scale=0.94&borderRadius=12&seed=${encodeURIComponent(displayName)}`}
               alt=""
+              width={44}
+              height={44}
               className="size-full object-cover transition-transform duration-200 group-hover:scale-110"
             />
           </button>

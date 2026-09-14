@@ -1,4 +1,5 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import { cache } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Collection, type CollectionCard } from "./collection";
 import { SiteHeader } from "@/components/site-header";
@@ -11,7 +12,7 @@ import { UserRound } from "lucide-react";
 import { PageTitle } from "@/components/page-title";
 import { notFound, redirect } from "next/navigation";
 
-async function loadSeller(username: string) {
+const loadSeller = cache(async (username: string) => {
   const sql = getDb();
   const users = await sql`
     SELECT username, display_name AS "displayName", facebook_url AS "facebookUrl"
@@ -60,6 +61,44 @@ async function loadSeller(username: string) {
       facebookUrl = url.toString();
   }
   return { cards, displayName: String(users[0].displayName), facebookUrl };
+});
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}): Promise<Metadata> {
+  try {
+    const username = decodeURIComponent((await params).username).toLowerCase();
+    const seller = await loadSeller(username);
+    if (!seller) return { title: "Không tìm thấy collection" };
+    const description = `Xem ${seller.cards.length} loại card Riftbound trong collection của ${seller.displayName} trên Ripbao.`;
+    const path = `/u/${encodeURIComponent(username)}`;
+    return {
+      title: `Collection của ${seller.displayName}`,
+      description,
+      alternates: { canonical: path },
+      openGraph: {
+        type: "profile",
+        title: `Collection của ${seller.displayName}`,
+        description,
+        url: path,
+        images: seller.cards[0]?.imageUrl
+          ? [{ url: seller.cards[0].imageUrl, alt: seller.cards[0].name }]
+          : undefined,
+      },
+      twitter: {
+        card: seller.cards[0]?.imageUrl ? "summary_large_image" : "summary",
+        title: `Collection của ${seller.displayName}`,
+        description,
+        images: seller.cards[0]?.imageUrl
+          ? [seller.cards[0].imageUrl]
+          : undefined,
+      },
+    };
+  } catch {
+    return { title: "Collection" };
+  }
 }
 
 function FacebookIcon() {

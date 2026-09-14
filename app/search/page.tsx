@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight, MapPin, Search } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { SiteHeader } from "@/components/site-header";
@@ -31,6 +32,8 @@ type CollectionResult = {
   cards: MatchingCard[];
 };
 
+const pageSize = 48;
+
 function normalizeQuery(value: string) {
   return value
     .normalize("NFKD")
@@ -42,16 +45,18 @@ function normalizeQuery(value: string) {
 
 async function searchCollections(
   rawQuery: string,
-): Promise<CollectionResult[]> {
+  page: number,
+): Promise<{ collections: CollectionResult[]; total: number }> {
   const query = normalizeQuery(rawQuery);
-  if (!query) return [];
+  if (!query) return { collections: [], total: 0 };
   const collectorNumber = /^\d+(?:\s*\/\s*\d+)?$/.test(rawQuery)
     ? rawQuery.split("/")[0].trim()
     : "";
 
   try {
     const sql = getDb();
-    const rows = await sql`
+    const offset = (page - 1) * pageSize;
+    const [rows, countRows] = await Promise.all([sql`
       SELECT users.username, users.display_name AS "displayName",
         COALESCE((
           SELECT array_agg(preference.name ORDER BY
@@ -83,8 +88,20 @@ async function searchCollections(
         )
       ORDER BY users.username, cards.name, cards.set_name, cards.collector_number,
         listings.min_price_vnd, listings.finish, listings.condition
-      LIMIT 200
-    `;
+      LIMIT ${pageSize} OFFSET ${offset}
+    `, sql`
+      SELECT count(*)::integer AS total
+      FROM listings
+      JOIN cards ON cards.id = listings.card_id
+      WHERE listings.is_active AND listings.quantity > 0 AND cards.is_active
+        AND (
+          cards.search_name LIKE '%' || ${query} || '%'
+          OR cards.search_name % ${query}
+          OR lower(cards.set_name) LIKE '%' || ${query} || '%'
+          OR lower(cards.riftbound_id) LIKE '%' || ${query} || '%'
+          OR (${collectorNumber} <> '' AND cards.collector_number::text = ${collectorNumber})
+        )
+    `]);
 
     const collections = new Map<string, CollectionResult>();
     for (const row of rows) {
@@ -112,25 +129,28 @@ async function searchCollections(
       collections.set(username, collection);
     }
 
-    return [...collections.values()].sort(
-      (a, b) =>
-        b.cards.length - a.cards.length ||
-        a.displayName.localeCompare(b.displayName, "vi"),
-    );
+    return {
+      collections: [...collections.values()],
+      total: Number(countRows[0]?.total ?? 0),
+    };
   } catch {
-    return [];
+    return { collections: [], total: 0 };
   }
 }
 
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string | string[] }>;
+  searchParams: Promise<{ q?: string | string[]; page?: string | string[] }>;
 }) {
   const params = await searchParams;
   const value = Array.isArray(params.q) ? params.q[0] : params.q;
   const query = value?.trim().slice(0, 100) ?? "";
-  const collections = await searchCollections(query);
+  const pageValue = Array.isArray(params.page) ? params.page[0] : params.page;
+  const parsedPage = Number(pageValue);
+  const currentPage = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const { collections, total } = await searchCollections(query, currentPage);
+  const totalPages = Math.ceil(total / pageSize);
   const matchingCards = collections.reduce(
     (total, collection) => total + collection.cards.length,
     0,
@@ -171,8 +191,8 @@ export default async function SearchPage({
               </h1>
               {query && (
                 <p className="mt-1 text-sm text-muted-foreground sm:text-xs">
-                  {collections.length} collection · {matchingCards} lựa chọn phù
-                  hợp
+                  {total} lựa chọn phù hợp · đang hiển thị {matchingCards} trên
+                  trang {currentPage}
                 </p>
               )}
             </div>
@@ -186,9 +206,11 @@ export default async function SearchPage({
               >
                 <CardContent className="p-0">
                   <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 border-b bg-card px-3 py-3 sm:flex sm:px-4">
-                    <img
+                    <Image
                       src={`https://api.dicebear.com/10.x/critters/svg?scale=0.94&borderRadius=50&seed=${encodeURIComponent(collection.displayName)}`}
                       alt=""
+                      width={44}
+                      height={44}
                       className="size-11 rounded-full border bg-card sm:size-9"
                     />
                     <div className="min-w-0 flex-1">
@@ -220,9 +242,11 @@ export default async function SearchPage({
                         key={`${card.id}-${card.finish}-${card.condition}-${index}`}
                         className="flex min-w-0 gap-3 bg-card p-3 sm:min-h-30"
                       >
-                        <img
+                        <Image
                           src={card.imageUrl}
                           alt={card.name}
+                          width={80}
+                          height={112}
                           loading="lazy"
                           decoding="async"
                           className="h-28 w-[80px] shrink-0 rounded-sm border bg-secondary object-cover sm:h-24 sm:w-[68px]"
@@ -258,6 +282,42 @@ export default async function SearchPage({
                 title="Chưa có collection bán card này"
                 description="Thử lại bằng tên card, tên set hoặc mã card khác."
               />
+            )}
+            {query && totalPages > 1 && (
+              <nav
+                className="flex items-center justify-between gap-3 border-t pt-4"
+                aria-label="Phân trang kết quả tìm kiếm"
+              >
+                {currentPage > 1 ? (
+                  <Link
+                    href={`/search?q=${encodeURIComponent(query)}&page=${currentPage - 1}`}
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "sm" }),
+                      "min-h-11",
+                    )}
+                  >
+                    Trang trước
+                  </Link>
+                ) : (
+                  <span />
+                )}
+                <span className="text-xs text-muted-foreground">
+                  {currentPage}/{totalPages}
+                </span>
+                {currentPage < totalPages ? (
+                  <Link
+                    href={`/search?q=${encodeURIComponent(query)}&page=${currentPage + 1}`}
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "sm" }),
+                      "min-h-11",
+                    )}
+                  >
+                    Trang sau
+                  </Link>
+                ) : (
+                  <span />
+                )}
+              </nav>
             )}
           </div>
         </section>

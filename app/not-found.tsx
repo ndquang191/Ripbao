@@ -11,7 +11,7 @@ export default function NotFound() {
           <span className="mx-auto grid size-12 place-items-center rounded-full bg-secondary text-primary">
             <SearchX className="size-6" />
           </span>
-          <p className="mt-5 text-[10px] font-extrabold tracking-[0.18em] text-muted-foreground uppercase">
+          <p className="mt-5 text-xs font-extrabold tracking-[0.18em] text-muted-foreground uppercase sm:text-[10px]">
             404 · Không tìm thấy
           </p>
           <h1 className="mt-2 font-serif text-2xl font-semibold">
@@ -21,7 +21,10 @@ export default function NotFound() {
             Đường dẫn có thể không còn tồn tại hoặc bạn không có quyền truy cập
             nội dung này.
           </p>
-          <Link href="/" className={`${buttonVariants()} mt-6`}>
+          <Link
+            href="/"
+            className={`${buttonVariants()} mt-6 min-h-11 w-full sm:w-auto`}
+          >
             <Home className="size-4" /> Quay lại homepage
           </Link>
         </CardContent>

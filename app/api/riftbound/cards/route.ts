@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllCards, getCards, RiftboundApiError } from "@/lib/riftbound";
+import { apiErrorResponse } from "@/lib/api-error";
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
@@ -21,9 +22,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     const status = error instanceof RiftboundApiError ? error.status : 502;
-    const message =
-      error instanceof Error ? error.message : "Unable to load cards";
-    return NextResponse.json({ error: message }, { status });
+    return apiErrorResponse("riftbound.cards", error, status);
   }
 }
 

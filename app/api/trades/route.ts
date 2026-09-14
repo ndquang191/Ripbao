@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import {
   createSession,
@@ -7,13 +7,18 @@ import {
   type AuthUser,
 } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { enforceRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user)
     return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
+  const requestedPage = Number(request.nextUrl.searchParams.get("page"));
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const size = 10;
+  const offset = (page - 1) * size;
   const sql = getDb();
-  const rows = await sql`
+  const [rows, countRows] = await Promise.all([sql`
     SELECT requests.id, requests.status, requests.created_at AS "createdAt",
       requests.buyer_contact_phone AS "buyerContactPhone",
       requests.completed_at AS "completedAt", buyers.username AS buyer,
@@ -41,14 +46,34 @@ export async function GET() {
       OR (requests.seller_id = ${user.id} AND requests.seller_hidden_at IS NULL)
     GROUP BY requests.id, buyers.id, sellers.id
     ORDER BY requests.created_at DESC
-  `;
-  return NextResponse.json({ requests: rows, username: user.username });
+    LIMIT ${size} OFFSET ${offset}
+  `, sql`
+    SELECT count(*)::integer AS total
+    FROM trade_requests AS requests
+    WHERE (requests.buyer_id = ${user.id} AND requests.buyer_hidden_at IS NULL)
+      OR (requests.seller_id = ${user.id} AND requests.seller_hidden_at IS NULL)
+  `]);
+  const total = Number(countRows[0]?.total ?? 0);
+  return NextResponse.json({
+    requests: rows,
+    username: user.username,
+    page,
+    pages: Math.ceil(total / size),
+    total,
+  });
 }
 
 export async function POST(request: Request) {
   let user = await getCurrentUser();
   const sql = getDb();
   if (!user) {
+    const rateLimit = await enforceRateLimit(request, {
+      scope: "guest-trade",
+      limit: 10,
+      windowSeconds: 60 * 60,
+    });
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfter);
+
     const guestId = randomBytes(4).toString("hex");
     const username = `guest_${guestId}`;
     const displayName = `Khách #${guestId.slice(0, 6).toUpperCase()}`;

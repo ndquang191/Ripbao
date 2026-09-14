@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { apiErrorResponse } from "@/lib/api-error";
 
 const DEFAULT_SIZE = 25;
 const MAX_SIZE = 100;
@@ -86,9 +87,7 @@ export async function GET(request: NextRequest) {
       pages: Math.ceil(total / size),
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to search cards";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiErrorResponse("cards.search", error);
   }
 }
 

@@ -10,6 +10,10 @@ Add schema changes as numbered SQL files in this directory:
 005_make_cards_riftbound_id_unique.sql
 006_create_carts.sql
 007_create_trade_requests.sql
+008_add_guest_users.sql
+009_add_trade_contact_phone.sql
+010_add_trade_visibility.sql
+011_add_request_rate_limits.sql
 ```
 
 Run all pending migrations with:

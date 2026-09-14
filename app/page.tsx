@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight, Search } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -97,10 +98,12 @@ function CardArtwork({ featuredCard }: { featuredCard: FeaturedCard | null }) {
       </div>
       <div className="absolute top-8 left-1/2 h-[330px] w-[230px] -translate-x-[70%] -rotate-[7deg] overflow-hidden rounded-lg border-[3px] border-[#b49d63] bg-[#e9dfbd] shadow-2xl">
         {featuredCard ? (
-          <img
+          <Image
             src={featuredCard.imageUrl}
             alt={featuredCard.name}
-            className="h-full w-full object-cover"
+            fill
+            sizes="230px"
+            className="object-cover"
           />
         ) : (
           <span className="grid h-full place-items-center font-serif text-8xl text-primary/30">
@@ -191,9 +194,11 @@ export default async function Home() {
                     )}
                   >
                     <CardContent className="flex items-center gap-4 p-3.5">
-                      <img
+                      <Image
                         src={`https://api.dicebear.com/10.x/critters/svg?scale=0.94&borderRadius=50&seed=${encodeURIComponent(seller.displayName)}`}
                         alt={`Avatar của ${seller.displayName}`}
+                        width={44}
+                        height={44}
                         className="size-11 shrink-0 rounded-full border bg-secondary object-cover"
                         loading="lazy"
                         decoding="async"
@@ -241,9 +246,9 @@ export default async function Home() {
           </div>
         </section>
 
-        <footer className="flex items-center justify-between gap-4 border-t pt-3 text-[9px] text-muted-foreground">
+        <footer className="flex flex-col gap-2 border-t pt-4 text-xs leading-5 text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:pt-3 sm:text-[9px] sm:leading-normal">
           <p>© 2026 Ripbao · Không liên kết với Riot Games</p>
-          <p className="text-right">
+          <p className="sm:text-right">
             <span className="block">Special thanks to</span>
             <span className="block">AppleMeoMeo</span>
             <span className="block">hodu2k</span>

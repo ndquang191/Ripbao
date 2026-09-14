@@ -92,19 +92,39 @@ export async function PATCH(
 
   if (body?.action === "complete") {
     const result = await sql`
-      WITH completed AS (
-        UPDATE trade_requests AS request SET status = 'completed', completed_at = now(), updated_at = now()
-        WHERE request.id = ${id} AND request.seller_id = ${user.id} AND request.status = 'pending'
+      WITH target AS (
+        SELECT request.id
+        FROM trade_requests AS request
+        WHERE request.id = ${id}
+          AND request.seller_id = ${user.id}
+          AND request.status = 'pending'
+      ), locked_stock AS MATERIALIZED (
+        SELECT listing.id AS "listingId", listing.quantity AS stock,
+          listing.is_active AS "isActive", item.quantity AS requested
+        FROM trade_request_items AS item
+        JOIN listings AS listing ON listing.id = item.listing_id
+        JOIN target ON target.id = item.request_id
+        ORDER BY listing.id
+        FOR UPDATE OF listing
+      ), eligible AS (
+        SELECT target.id
+        FROM target
+        WHERE EXISTS (SELECT 1 FROM locked_stock)
           AND NOT EXISTS (
-            SELECT 1 FROM trade_request_items AS item
-            JOIN listings ON listings.id = item.listing_id
-            WHERE item.request_id = request.id AND (NOT listings.is_active OR listings.quantity < item.quantity)
+            SELECT 1 FROM locked_stock
+            WHERE NOT "isActive" OR stock < requested
           )
+      ), completed AS (
+        UPDATE trade_requests AS request SET status = 'completed', completed_at = now(), updated_at = now()
+        WHERE request.id IN (SELECT id FROM eligible)
         RETURNING request.id
       ), stock AS (
         UPDATE listings SET quantity = listings.quantity - item.quantity, updated_at = now()
         FROM trade_request_items AS item, completed
-        WHERE item.request_id = completed.id AND listings.id = item.listing_id
+        WHERE item.request_id = completed.id
+          AND listings.id = item.listing_id
+          AND listings.is_active
+          AND listings.quantity >= item.quantity
         RETURNING listings.id
       )
       SELECT id, (SELECT count(*) FROM stock)::integer AS "updatedListings" FROM completed

@@ -11,13 +11,15 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/components/cart-provider";
 import { DomainFilter, FilterDropdown } from "@/components/domain-filter";
+import { useModalDialog } from "@/app/collection/_hooks/use-modal-dialog";
 import { parseCurrency } from "@/lib/currency";
 import {
   RIFTBOUND_CARD_TYPES,
@@ -49,6 +51,7 @@ export type CollectionCard = {
 
 const knownSets = ["Origins", "Spiritforged", "Unleashed", "Vendetta"];
 const sortOptions = ["Theo tên", "Giá tăng dần", "Giá giảm dần"] as const;
+const collectionPageSize = 24;
 
 export function Collection({
   cards,
@@ -74,23 +77,8 @@ export function Collection({
   const [onlySelected, setOnlySelected] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [previewCard, setPreviewCard] = useState<CollectionCard | null>(null);
+  const [visibleCount, setVisibleCount] = useState(collectionPageSize);
   const ownedCards = cards;
-
-  useEffect(() => {
-    if (!previewCard) return;
-
-    const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setPreviewCard(null);
-    };
-
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [previewCard]);
 
   const filterOptions = useMemo(
     () => ({
@@ -149,6 +137,10 @@ export function Collection({
   const hasFilters =
     query.length > 0 ||
     Boolean(set || type || rarity || faction || onlySelected);
+
+  useEffect(() => {
+    setVisibleCount(collectionPageSize);
+  }, [faction, onlySelected, query, rarity, set, sort, type]);
   const clearFilters = () => {
     setQuery("");
     setSet("");
@@ -171,7 +163,7 @@ export function Collection({
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="h-9 bg-card pr-9 pl-9 text-xs"
+            className="h-11 bg-card pr-11 pl-10 text-base sm:h-9 sm:pr-9 sm:pl-9 sm:text-xs"
             placeholder="Tìm card, set hoặc mã số..."
             aria-label="Tìm trong bộ sưu tập"
           />
@@ -179,7 +171,7 @@ export function Collection({
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute top-1/2 right-0 grid size-11 -translate-y-1/2 place-items-center text-muted-foreground hover:text-foreground sm:right-1 sm:size-9"
               aria-label="Xoá tìm kiếm"
             >
               <X className="size-3.5" />
@@ -213,7 +205,7 @@ export function Collection({
         <div
           id="collection-card-filters"
           className={cn(
-            "flex-wrap items-center justify-start gap-2 px-3 py-3 text-left sm:flex",
+            "flex-col items-stretch gap-2 px-3 py-3 text-left sm:flex sm:flex-row sm:flex-wrap sm:items-center",
             filtersOpen ? "flex border-t sm:border-t-0" : "hidden",
           )}
           aria-label="Bộ lọc card"
@@ -223,24 +215,27 @@ export function Collection({
             value={set}
             options={filterOptions.sets}
             onChange={setSet}
-            className="[&>summary]:min-w-48"
+            className="w-full [&>summary]:w-full sm:w-auto sm:[&>summary]:min-w-48"
           />
           <FilterDropdown
             label="Loại card"
             value={type}
             options={filterOptions.types}
             onChange={setType}
+            className="w-full [&>summary]:w-full sm:w-auto"
           />
           <FilterDropdown
             label="Độ hiếm"
             value={rarity}
             options={filterOptions.rarities}
             onChange={setRarity}
+            className="w-full [&>summary]:w-full sm:w-auto"
           />
           <DomainFilter
             value={faction}
             options={filterOptions.domains}
             onChange={setFaction}
+            className="w-full [&>summary]:w-full sm:w-auto"
           />
           {!isOwner && (
             <label
@@ -264,7 +259,7 @@ export function Collection({
             options={sortOptions}
             onChange={(value) => setSort(value as (typeof sortOptions)[number])}
             allowEmpty={false}
-            className="[&>summary]:min-w-36"
+            className="w-full [&>summary]:w-full sm:w-auto sm:[&>summary]:min-w-36"
           />
           <span className="shrink-0 text-[10px] text-muted-foreground">
             {filteredCards.length}/{ownedCards.length} card
@@ -273,7 +268,7 @@ export function Collection({
             <button
               type="button"
               onClick={clearFilters}
-              className="inline-flex shrink-0 items-center gap-1 text-left text-[10px] font-bold text-[#607d35] hover:underline"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1 text-left text-sm font-bold text-[#607d35] hover:underline sm:min-h-0 sm:text-[10px]"
             >
               <X className="size-3" /> Xoá lọc
             </button>
@@ -282,8 +277,8 @@ export function Collection({
       </div>
 
       {filteredCards.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {filteredCards.map((card) => {
+        <div className="grid grid-cols-2 gap-3 max-[359px]:grid-cols-1 sm:grid-cols-3 lg:grid-cols-6">
+          {filteredCards.slice(0, visibleCount).map((card) => {
             const cartItem = items.find(
               (item) => item.key === `${sellerKey}:${card.id}`,
             );
@@ -348,10 +343,12 @@ export function Collection({
                   )}
                 >
                   {card.imageUrl && (
-                    <img
+                    <Image
                       src={card.imageUrl}
                       alt={`Artwork của ${card.name}`}
-                      className="absolute inset-0 size-full object-cover"
+                      fill
+                      sizes="(max-width: 359px) 100vw, (max-width: 639px) 50vw, (max-width: 1023px) 33vw, 16vw"
+                      className="object-cover"
                     />
                   )}
                   {!isOwner && (
@@ -536,39 +533,74 @@ export function Collection({
         </div>
       )}
 
-      {previewCard?.imageUrl && (
-        <div
-          className="fixed inset-0 z-50 grid cursor-zoom-out place-items-center bg-black/85 p-4 backdrop-blur-sm sm:p-8"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Ảnh ${previewCard.name}`}
-          onMouseDown={(event) =>
-            event.target === event.currentTarget && setPreviewCard(null)
-          }
-        >
-          <img
-            src={previewCard.imageUrl}
-            alt={previewCard.name}
-            className="max-h-[80vh] max-w-full cursor-default rounded-lg object-contain shadow-2xl"
-            onMouseDown={(event) => event.stopPropagation()}
-          />
-          <button
+      {filteredCards.length > visibleCount && (
+        <div className="mt-5 flex justify-center">
+          <Button
             type="button"
-            onClick={() => setPreviewCard(null)}
-            className="absolute top-4 right-4 grid size-10 place-items-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/75"
-            aria-label="Đóng ảnh"
+            variant="outline"
+            className="min-h-11 w-full sm:w-auto"
+            onClick={() =>
+              setVisibleCount((count) => count + collectionPageSize)
+            }
           >
-            <X className="size-5" />
-          </button>
+            Xem thêm {Math.min(collectionPageSize, filteredCards.length - visibleCount)} card
+          </Button>
         </div>
+      )}
+
+      {previewCard?.imageUrl && (
+        <CardPreviewDialog
+          card={previewCard}
+          imageUrl={previewCard.imageUrl}
+          close={() => setPreviewCard(null)}
+        />
       )}
     </>
   );
 }
 
-function uniqueValues(values: string[]) {
-  return [...new Set(values.filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b),
+function CardPreviewDialog({
+  card,
+  imageUrl,
+  close,
+}: {
+  card: CollectionCard;
+  imageUrl: string;
+  close: () => void;
+}) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalDialog(panelRef, close);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 grid cursor-zoom-out place-items-center bg-black/85 p-4 backdrop-blur-sm sm:p-8"
+      onMouseDown={(event) => event.target === event.currentTarget && close()}
+    >
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Ảnh ${card.name}`}
+        className="relative flex max-h-full max-w-full items-center outline-none"
+      >
+        <Image
+          src={imageUrl}
+          alt={card.name}
+          width={744}
+          height={1039}
+          className="max-h-[calc(100dvh-2rem)] max-w-full cursor-default rounded-lg object-contain shadow-2xl sm:max-h-[calc(100dvh-4rem)]"
+        />
+        <button
+          type="button"
+          onClick={close}
+          className="absolute top-2 right-2 grid size-11 place-items-center rounded-full bg-black/65 text-white transition-colors hover:bg-black/85 sm:-top-4 sm:-right-4"
+          aria-label="Đóng ảnh"
+        >
+          <X className="size-5" />
+        </button>
+      </div>
+    </div>
   );
 }
 

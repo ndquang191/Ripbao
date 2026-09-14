@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 const previewGap = 12;
@@ -70,15 +71,16 @@ export function CardImagePreview({
         onFocus={showPreview}
         onBlur={() => setPosition(null)}
         className={cn(
-          "shrink-0 overflow-hidden rounded-[3px] border bg-secondary outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "relative shrink-0 overflow-hidden rounded-[3px] border bg-secondary outline-none focus-visible:ring-2 focus-visible:ring-ring",
           className,
         )}
       >
         {src && (
-          <img
+          <Image
             src={src}
             alt={alt}
-            loading="lazy"
+            fill
+            sizes="96px"
             className={cn("size-full object-cover", imageClassName)}
           />
         )}
@@ -91,7 +93,13 @@ export function CardImagePreview({
             className="pointer-events-none fixed z-[100] overflow-hidden rounded-md border border-primary/40 bg-background shadow-2xl ring-1 ring-primary/15"
             style={position}
           >
-            <img src={src} alt="" className="size-full object-cover" />
+            <Image
+              src={src}
+              alt=""
+              fill
+              sizes={`${Math.round(position.width)}px`}
+              className="object-cover"
+            />
           </div>,
           document.body,
         )}

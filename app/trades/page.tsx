@@ -62,19 +62,23 @@ const statusLabel = {
 export default function TradesPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
   const [loadError, setLoadError] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const { sessionState } = useCart();
   const toast = useToast();
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (nextPage = 1, append = false) => {
+    if (append) setLoadingMore(true);
+    else setLoading(true);
     setLoadError("");
     const canReadGuestTrades =
       sessionState === "anonymous" || sessionState === "guest";
     const localTrades = canReadGuestTrades ? readGuestTrades() : [];
     try {
-      const response = await fetch("/api/trades");
+      const response = await fetch(`/api/trades?page=${nextPage}`);
       if (response.status === 401) {
         if (localTrades.length > 0) {
           setTrades(localTrades);
@@ -85,6 +89,8 @@ export default function TradesPage() {
       }
       const data = (await response.json().catch(() => null)) as {
         requests?: Trade[];
+        page?: number;
+        pages?: number;
         error?: string;
       } | null;
       if (!response.ok)
@@ -92,10 +98,19 @@ export default function TradesPage() {
       if (!data) throw new Error("Máy chủ trả về dữ liệu không hợp lệ.");
       const remoteTrades = data.requests ?? [];
       const remoteIds = new Set(remoteTrades.map((trade) => trade.id));
-      setTrades([
+      const incoming = [
         ...remoteTrades,
-        ...localTrades.filter((trade) => !remoteIds.has(trade.id)),
-      ]);
+        ...(nextPage === 1
+          ? localTrades.filter((trade) => !remoteIds.has(trade.id))
+          : []),
+      ];
+      setTrades((current) => {
+        if (!append) return incoming;
+        const currentIds = new Set(current.map((trade) => trade.id));
+        return [...current, ...incoming.filter((trade) => !currentIds.has(trade.id))];
+      });
+      setPage(data.page ?? nextPage);
+      setPages(Math.max(1, data.pages ?? 1));
     } catch (error) {
       if (localTrades.length > 0) setTrades(localTrades);
       else
@@ -106,6 +121,7 @@ export default function TradesPage() {
         );
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, [sessionState]);
   useEffect(() => {
@@ -455,6 +471,18 @@ export default function TradesPage() {
                 </Card>
               );
             })}
+            {page < pages && (
+              <div className="flex justify-center pt-2">
+                <Button
+                  variant="outline"
+                  className="min-h-11 w-full sm:w-auto"
+                  disabled={loadingMore}
+                  onClick={() => void load(page + 1, true)}
+                >
+                  {loadingMore ? "Đang tải..." : "Xem thêm giao dịch"}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
