@@ -5,20 +5,26 @@ import { currencyConfig } from "@/lib/currency";
 import { useDebounce } from "@/lib/use-debounce";
 import {
   compareBySort,
+  cardIdFromVariantKey,
   defaultMin,
   defaultMultiplier,
   domainRank,
   editOf,
+  FINISHES,
   fromListing,
   sameEdits,
+  totalQuantity,
   uniq,
+  variantKey,
 } from "../_lib/collection-utils";
 import { QUICK_PRICING_RARITIES } from "../_lib/constants";
 import {
   type ApiListing,
   type CardData,
   type DomainGroup,
+  type CollectionDraft,
   type Edit,
+  type Finish,
   type Filters,
   type Sort,
 } from "../_lib/models";
@@ -28,8 +34,8 @@ const DEFAULT_SORT: Sort = { key: "name", direction: "asc" };
 
 export function useCollectionEditor() {
   const [username, setUsername] = useState("");
-  const [saved, setSaved] = useState<Record<string, Edit>>({});
-  const [draft, setDraft] = useState<Record<string, Edit>>({});
+  const [saved, setSaved] = useState<CollectionDraft>({});
+  const [draft, setDraft] = useState<CollectionDraft>({});
   const [cardMap, setCardMap] = useState<Record<string, CardData>>({});
   const [ready, setReady] = useState(false);
   const [query, setQuery] = useState("");
@@ -69,9 +75,8 @@ export function useCollectionEditor() {
         const items = data.items ?? [];
         const baseline = Object.fromEntries(
           items.map((item) => [
-            item.cardId,
+            variantKey(item.cardId, item.finish ?? "nonfoil"),
             {
-              finish: item.finish ?? "nonfoil",
               quantity: item.quantity,
               minPrice: Number(item.minPrice),
               tcgMultiplier: Number(item.tcgMultiplier),
@@ -95,8 +100,13 @@ export function useCollectionEditor() {
 
   const cards = useMemo(
     () =>
-      Object.keys(draft)
-        .filter((id) => saved[id] || draft[id].quantity > 0)
+      uniq(Object.keys(draft).map(cardIdFromVariantKey))
+        .filter((id) =>
+          FINISHES.some((finish) => {
+            const key = variantKey(id, finish);
+            return saved[key] || draft[key]?.quantity > 0;
+          }),
+        )
         .map((id) => cardMap[id])
         .filter(Boolean),
     [cardMap, draft, saved],
@@ -141,11 +151,14 @@ export function useCollectionEditor() {
     (edit) => edit.quantity > 0,
   );
 
-  const updateCard = useCallback((id: string, patch: Partial<Edit>) => {
+  const updateCard = useCallback((id: string, finish: Finish, patch: Partial<Edit>) => {
     setSaveStatus("idle");
     setDraft((current) => ({
       ...current,
-      [id]: { ...editOf(current[id]), ...patch },
+      [variantKey(id, finish)]: {
+        ...editOf(current[variantKey(id, finish)]),
+        ...patch,
+      },
     }));
   }, []);
   const mergeCards = useCallback((incoming: CardData[]) => {
@@ -189,15 +202,20 @@ export function useCollectionEditor() {
       const next = { ...current };
       cards.forEach((card) => {
         if (
-          next[card.id]?.quantity > 0 &&
+          totalQuantity(next, card.id) > 0 &&
           QUICK_PRICING_RARITIES.includes(card.rarity)
         ) {
-          next[card.id] = {
-            ...next[card.id],
-            minPrice: minimums[card.rarity] ?? defaultMin(card.rarity),
-            tcgMultiplier:
-              multipliers[card.rarity] ?? defaultMultiplier(card.rarity),
-          };
+          FINISHES.forEach((finish) => {
+            const key = variantKey(card.id, finish);
+            if (next[key]?.quantity > 0) {
+              next[key] = {
+                ...next[key],
+                minPrice: minimums[card.rarity] ?? defaultMin(card.rarity),
+                tcgMultiplier:
+                  multipliers[card.rarity] ?? defaultMultiplier(card.rarity),
+              };
+            }
+          });
         }
       });
       return next;
@@ -213,8 +231,9 @@ export function useCollectionEditor() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: Object.entries(draft).map(([cardId, edit]) => ({
-            cardId,
+          items: Object.entries(draft).map(([key, edit]) => ({
+            cardId: cardIdFromVariantKey(key),
+            finish: key.startsWith("foil:") ? "foil" : "nonfoil",
             ...edit,
           })),
         }),

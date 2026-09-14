@@ -10,22 +10,29 @@ import {
   defaultMin,
   defaultMultiplier,
   domainColor,
+  editFor,
+  totalQuantity,
   uniqueCards,
+  variantKey,
 } from "../_lib/collection-utils";
-import { type CardData, type Edit } from "../_lib/models";
+import {
+  type CardData,
+  type CollectionDraft,
+  type Edit,
+  type Finish,
+} from "../_lib/models";
 import {
   CardImage,
-  FinishInput,
   QuantityInput,
   SearchBox,
 } from "./editor-inputs";
 
 export function AddCardDrawer(props: {
-  savedIds: Set<string>;
-  draft: Record<string, Edit>;
+  saved: CollectionDraft;
+  draft: CollectionDraft;
   cardMap: Record<string, CardData>;
   mergeCards: (cards: CardData[]) => void;
-  updateCard: (id: string, edit: Partial<Edit>) => void;
+  updateCard: (id: string, finish: Finish, edit: Partial<Edit>) => void;
   close: () => void;
 }) {
   const [showAddedOnly, setShowAddedOnly] = useState(false);
@@ -34,18 +41,23 @@ export function AddCardDrawer(props: {
   useModalDialog(panelRef, props.close);
 
   const added = Object.entries(props.draft).filter(
-    ([id, edit]) => !props.savedIds.has(id) && edit.quantity > 0,
+    ([key, edit]) => !props.saved[key] && edit.quantity > 0,
   );
+  const addedCardCount = new Set(
+    added.map(([key]) => key.slice(key.indexOf(":") + 1)),
+  ).size;
   const available = useMemo(
     () =>
       uniqueCards([
-        ...catalog.cards.filter((card) => !props.savedIds.has(card.id)),
-        ...added.map(([id]) => props.cardMap[id]).filter(Boolean),
+        ...catalog.cards,
+        ...added
+          .map(([key]) => props.cardMap[key.slice(key.indexOf(":") + 1)])
+          .filter(Boolean),
       ]),
-    [added, catalog.cards, props.cardMap, props.savedIds],
+    [added, catalog.cards, props.cardMap],
   );
   const visible = showAddedOnly
-    ? available.filter((card) => (props.draft[card.id]?.quantity ?? 0) > 0)
+    ? available.filter((card) => totalQuantity(props.draft, card.id) > 0)
     : available;
 
   return (
@@ -118,7 +130,7 @@ export function AddCardDrawer(props: {
         >
           <div className="grid gap-2 sm:grid-cols-2">
             {visible.map((card) => {
-              const quantity = props.draft[card.id]?.quantity ?? 0;
+              const quantity = totalQuantity(props.draft, card.id);
               return (
                 <article
                   key={card.id}
@@ -138,37 +150,19 @@ export function AddCardDrawer(props: {
                     >
                       {card.domains.join(" · ") || "Không có Domain"}
                     </p>
-                    <FinishInput
-                      value={props.draft[card.id]?.finish ?? "nonfoil"}
-                      name={card.name}
-                      set={(finish) =>
-                        props.updateCard(card.id, {
-                          finish,
-                          minPrice:
-                            props.draft[card.id]?.minPrice ??
-                            defaultMin(card.rarity),
-                          tcgMultiplier:
-                            props.draft[card.id]?.tcgMultiplier ??
-                            defaultMultiplier(card.rarity),
-                        })
-                      }
-                    />
-                    <div className="mt-2 flex items-center justify-between max-sm:[&_button]:size-11 max-sm:[&_input]:h-11 max-sm:[&_input]:flex-1">
-                      <QuantityInput
-                        value={quantity}
-                        name={card.name}
-                        set={(value) =>
-                          props.updateCard(card.id, {
-                            quantity: value,
-                            minPrice:
-                              props.draft[card.id]?.minPrice ??
-                              defaultMin(card.rarity),
-                            tcgMultiplier:
-                              props.draft[card.id]?.tcgMultiplier ??
-                              defaultMultiplier(card.rarity),
-                          })
-                        }
-                      />
+                    <div className="mt-2 space-y-1.5">
+                      {(["nonfoil", "foil"] as const).map((finish) => (
+                        <DrawerVariant
+                          key={finish}
+                          card={card}
+                          finish={finish}
+                          edit={editFor(props.draft, card.id, finish)}
+                          exists={Boolean(props.draft[variantKey(card.id, finish)])}
+                          updateCard={props.updateCard}
+                        />
+                      ))}
+                    </div>
+                    <div className="mt-2 flex items-center justify-end">
                       {quantity > 0 && (
                         <span className="rounded-sm bg-accent/40 px-1.5 py-1 text-[9px] font-bold">
                           Đã thêm {quantity}
@@ -194,7 +188,7 @@ export function AddCardDrawer(props: {
         </div>
         <footer className="flex shrink-0 flex-col gap-3 border-t bg-card p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:p-4">
           <span className="text-xs text-muted-foreground sm:text-[10px]">
-            <strong className="text-foreground">{added.length}</strong> loại ·{" "}
+            <strong className="text-foreground">{addedCardCount}</strong> loại ·{" "}
             <strong className="text-foreground">
               {added.reduce((total, [, edit]) => total + edit.quantity, 0)}
             </strong>{" "}
@@ -216,6 +210,36 @@ export function AddCardDrawer(props: {
           </div>
         </footer>
       </aside>
+    </div>
+  );
+}
+
+function DrawerVariant(props: {
+  card: CardData;
+  finish: Finish;
+  edit: Edit;
+  exists: boolean;
+  updateCard: (id: string, finish: Finish, edit: Partial<Edit>) => void;
+}) {
+  const label = props.finish === "foil" ? "Foil" : "Thường";
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-sm border bg-background/60 px-2 py-1 max-sm:[&_button]:size-11 max-sm:[&_input]:h-11">
+      <span className="text-[10px] font-bold">{label}</span>
+      <QuantityInput
+        value={props.edit.quantity}
+        name={`${props.card.name} ${label}`}
+        set={(quantity) =>
+          props.updateCard(props.card.id, props.finish, {
+            quantity,
+            minPrice: props.exists
+              ? props.edit.minPrice
+              : defaultMin(props.card.rarity),
+            tcgMultiplier: props.exists
+              ? props.edit.tcgMultiplier
+              : defaultMultiplier(props.card.rarity),
+          })
+        }
+      />
     </div>
   );
 }

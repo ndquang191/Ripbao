@@ -11,6 +11,7 @@ import { CollectionToolbar } from "./_components/collection-toolbar";
 import { DomainSection } from "./_components/domain-section";
 import { useCollectionEditor } from "./_hooks/use-collection-editor";
 import { QUICK_PRICING_RARITIES } from "./_lib/constants";
+import { totalQuantity } from "./_lib/collection-utils";
 
 export default function CollectionPage() {
   const editor = useCollectionEditor();
@@ -23,7 +24,7 @@ export default function CollectionPage() {
   );
   const pricingCount = editor.cards.filter(
     (card) =>
-      editor.draft[card.id]?.quantity > 0 &&
+      totalQuantity(editor.draft, card.id) > 0 &&
       QUICK_PRICING_RARITIES.includes(card.rarity),
   ).length;
 
@@ -33,7 +34,7 @@ export default function CollectionPage() {
         <SiteHeader className="pb-4" />
         <CollectionToolbar
           username={editor.username}
-          typeCount={editor.positiveEdits.length}
+          typeCount={editor.cards.length}
           copyCount={copyCount}
           dirty={editor.dirty}
           saving={editor.saving}
@@ -113,7 +114,7 @@ export default function CollectionPage() {
       </div>
       {editor.drawerOpen && (
         <AddCardDrawer
-          savedIds={new Set(Object.keys(editor.saved))}
+          saved={editor.saved}
           draft={editor.draft}
           cardMap={editor.cardMap}
           mergeCards={editor.mergeCards}

@@ -31,11 +31,12 @@ export type ApiListing = {
 };
 
 export type Edit = {
-  finish: Finish;
   quantity: number;
   minPrice: number;
   tcgMultiplier: number;
 };
+
+export type CollectionDraft = Record<string, Edit>;
 
 export type Filters = {
   sets: string[];

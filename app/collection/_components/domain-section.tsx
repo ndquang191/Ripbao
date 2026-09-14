@@ -2,11 +2,22 @@
 
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { domainColor, editOf, finalPrice } from "../_lib/collection-utils";
-import { type CardData, type Edit, type Sort } from "../_lib/models";
+import {
+  domainColor,
+  editFor,
+  finalPrice,
+  totalQuantity,
+  variantKey,
+} from "../_lib/collection-utils";
+import {
+  type CardData,
+  type CollectionDraft,
+  type Edit,
+  type Finish,
+  type Sort,
+} from "../_lib/models";
 import {
   CardImage,
-  FinishInput,
   MoneyInput,
   MultiplierInput,
   QuantityInput,
@@ -15,14 +26,14 @@ import {
 export function DomainSection(props: {
   domain: string;
   cards: CardData[];
-  draft: Record<string, Edit>;
-  saved: Record<string, Edit>;
+  draft: CollectionDraft;
+  saved: CollectionDraft;
   sort: Sort;
   changeSort: (key: Sort["key"]) => void;
-  updateCard: (id: string, edit: Partial<Edit>) => void;
+  updateCard: (id: string, finish: Finish, edit: Partial<Edit>) => void;
 }) {
   const copies = props.cards.reduce(
-    (total, card) => total + Math.max(0, props.draft[card.id]?.quantity ?? 0),
+    (total, card) => total + totalQuantity(props.draft, card.id),
     0,
   );
   const color = domainColor(props.domain);
@@ -40,7 +51,7 @@ export function DomainSection(props: {
           {props.cards.length} loại · {copies} bản
         </span>
       </header>
-      <div className="hidden grid-cols-[52px_minmax(170px,1fr)_130px_112px_132px_92px_120px] gap-2 border-b bg-secondary/45 px-3 py-2 text-[9px] font-bold uppercase text-muted-foreground md:grid">
+      <div className="hidden grid-cols-[52px_minmax(170px,1fr)_130px_minmax(0,456px)] gap-2 border-b bg-secondary/45 px-3 py-2 text-[9px] font-bold uppercase text-muted-foreground md:grid">
         <span>Ảnh</span>
         <SortButton
           label="Tên card"
@@ -49,28 +60,20 @@ export function DomainSection(props: {
           changeSort={props.changeSort}
         />
         <span>Set / Mã</span>
-        <SortButton
-          label="Số lượng"
-          sortKey="quantity"
-          sort={props.sort}
-          changeSort={props.changeSort}
-        />
-        <span>Giá Min</span>
-        <span>× TCG</span>
-        <SortButton
-          label="Giá cuối"
-          sortKey="finalPrice"
-          sort={props.sort}
-          changeSort={props.changeSort}
-          className="justify-end border-l pl-3 text-right"
-        />
+        <div className="grid grid-cols-[64px_minmax(92px,112px)_minmax(100px,132px)_72px_minmax(76px,100px)] gap-2 px-2">
+          <span>Phiên bản</span>
+          <SortButton label="Số lượng" sortKey="quantity" sort={props.sort} changeSort={props.changeSort} />
+          <span>Giá Min</span>
+          <span>× TCG</span>
+          <SortButton label="Giá cuối" sortKey="finalPrice" sort={props.sort} changeSort={props.changeSort} className="justify-end text-right" />
+        </div>
       </div>
       {props.cards.map((card) => (
         <CardRow
           key={card.id}
           card={card}
-          edit={editOf(props.draft[card.id])}
-          wasSaved={Boolean(props.saved[card.id])}
+          draft={props.draft}
+          saved={props.saved}
           updateCard={props.updateCard}
         />
       ))}
@@ -112,16 +115,17 @@ function SortButton(props: {
 
 function CardRow(props: {
   card: CardData;
-  edit: Edit;
-  wasSaved: boolean;
-  updateCard: (id: string, edit: Partial<Edit>) => void;
+  draft: CollectionDraft;
+  saved: CollectionDraft;
+  updateCard: (id: string, finish: Finish, edit: Partial<Edit>) => void;
 }) {
-  const { card, edit } = props;
+  const { card } = props;
+  const quantity = totalQuantity(props.draft, card.id);
   return (
     <div
       className={cn(
-        "grid gap-4 border-t p-3 first:border-t-0 md:grid-cols-[52px_minmax(170px,1fr)_130px_112px_132px_92px_120px] md:items-center md:gap-2",
-        !edit.quantity && "bg-destructive/5",
+        "grid gap-4 border-t p-3 first:border-t-0 md:grid-cols-[52px_minmax(170px,1fr)_130px_minmax(0,456px)] md:items-start md:gap-2",
+        !quantity && "bg-destructive/5",
       )}
     >
       <div className="flex gap-3 md:contents">
@@ -133,14 +137,17 @@ function CardRow(props: {
           <p className="mt-1 text-xs text-muted-foreground md:hidden">
             {card.set} · #{card.collectorNumber} · {card.rarity}
           </p>
-          <FinishInput
-            value={edit.finish}
-            name={card.name}
-            set={(finish) => props.updateCard(card.id, { finish })}
-          />
-          {!edit.quantity && (
+          <p className="mt-1 text-[10px] font-bold text-muted-foreground">
+            Thường và Foil được quản lý riêng
+          </p>
+          {!quantity && (
             <span className="mt-1 inline-block rounded-sm bg-destructive/10 px-1.5 py-.5 text-[9px] font-bold text-destructive">
-              {props.wasSaved ? "Sẽ xóa khi lưu" : "Chưa thêm"}
+              {Boolean(
+                props.saved[variantKey(card.id, "nonfoil")] ||
+                  props.saved[variantKey(card.id, "foil")],
+              )
+                ? "Sẽ xóa khi lưu"
+                : "Chưa thêm"}
             </span>
           )}
         </div>
@@ -149,47 +156,44 @@ function CardRow(props: {
         <strong>{card.set}</strong>{" "}
         <span className="text-muted-foreground">#{card.collectorNumber}</span>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:contents">
-        <label className="col-span-2 text-xs font-bold text-muted-foreground max-md:[&_button]:size-11 max-md:[&_input]:h-11 max-md:[&_input]:flex-1 md:hidden">
-          Số lượng
-          <QuantityInput
-            value={edit.quantity}
-            name={card.name}
-            set={(quantity) => props.updateCard(card.id, { quantity })}
-          />
-        </label>
-        <div className="hidden md:block">
-          <QuantityInput
-            value={edit.quantity}
-            name={card.name}
-            set={(quantity) => props.updateCard(card.id, { quantity })}
-          />
-        </div>
-        <label className="text-xs font-bold text-muted-foreground max-md:[&_input]:h-11 max-md:[&_input]:text-sm md:text-[9px]">
-          <span className="md:hidden">Giá Min</span>
-          <MoneyInput
-            value={edit.minPrice}
-            set={(minPrice) => props.updateCard(card.id, { minPrice })}
-          />
-        </label>
-        <label className="text-xs font-bold text-muted-foreground max-md:[&_input]:h-11 max-md:[&_input]:text-sm md:text-[9px]">
-          <span className="md:hidden">× TCG</span>
-          <MultiplierInput
-            value={edit.tcgMultiplier}
-            set={(tcgMultiplier) =>
-              props.updateCard(card.id, { tcgMultiplier })
-            }
-            className="mt-1 md:mt-0"
-          />
-        </label>
+      <div className="space-y-2">
+        <VariantRow card={card} finish="nonfoil" edit={editFor(props.draft, card.id, "nonfoil")} updateCard={props.updateCard} />
+        <VariantRow card={card} finish="foil" edit={editFor(props.draft, card.id, "foil")} updateCard={props.updateCard} />
       </div>
-      <div className="text-right md:border-l md:pl-3">
-        <span className="text-xs font-bold text-muted-foreground md:hidden">
-          Giá cuối{" "}
-        </span>
-        <strong className="text-sm text-[#506b32] md:text-[10px]">
-          {finalPrice(card, edit)}
-        </strong>
+    </div>
+  );
+}
+
+function VariantRow(props: {
+  card: CardData;
+  finish: Finish;
+  edit: Edit;
+  updateCard: (id: string, finish: Finish, edit: Partial<Edit>) => void;
+}) {
+  const label = props.finish === "foil" ? "Foil" : "Thường";
+  const set = (patch: Partial<Edit>) =>
+    props.updateCard(props.card.id, props.finish, patch);
+
+  return (
+    <div className="grid grid-cols-[64px_minmax(92px,112px)_minmax(100px,132px)_72px_minmax(76px,100px)] items-center gap-2 rounded-sm border bg-background/60 p-2 max-md:grid-cols-2">
+      <span className={cn("text-[10px] font-extrabold", props.finish === "foil" && "text-[#826a19]")}>
+        {label}
+      </span>
+      <label className="text-[9px] font-bold text-muted-foreground max-md:text-xs">
+        <span className="md:hidden">Số lượng</span>
+        <QuantityInput value={props.edit.quantity} name={`${props.card.name} ${label}`} set={(quantity) => set({ quantity })} />
+      </label>
+      <label className="text-[9px] font-bold text-muted-foreground max-md:text-xs">
+        <span className="md:hidden">Giá Min</span>
+        <MoneyInput value={props.edit.minPrice} set={(minPrice) => set({ minPrice })} />
+      </label>
+      <label className="text-[9px] font-bold text-muted-foreground max-md:text-xs">
+        <span className="md:hidden">× TCG</span>
+        <MultiplierInput value={props.edit.tcgMultiplier} set={(tcgMultiplier) => set({ tcgMultiplier })} />
+      </label>
+      <div className="text-right max-md:self-end">
+        <span className="block text-[9px] font-bold text-muted-foreground md:hidden">Giá cuối</span>
+        <strong className="text-[10px] text-[#506b32]">{finalPrice(props.card, props.edit)}</strong>
       </div>
     </div>
   );
