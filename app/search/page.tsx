@@ -211,6 +211,7 @@ export default async function SearchPage({
                       alt=""
                       width={44}
                       height={44}
+                      unoptimized
                       className="size-11 rounded-full border bg-card sm:size-9"
                     />
                     <div className="min-w-0 flex-1">

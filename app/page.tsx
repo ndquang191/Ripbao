@@ -199,6 +199,7 @@ export default async function Home() {
                         alt={`Avatar của ${seller.displayName}`}
                         width={44}
                         height={44}
+                        unoptimized
                         className="size-11 shrink-0 rounded-full border bg-secondary object-cover"
                         loading="lazy"
                         decoding="async"

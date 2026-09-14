@@ -232,6 +232,7 @@ export function AccountLink({ className }: { className?: string }) {
               alt=""
               width={44}
               height={44}
+              unoptimized
               className="size-full object-cover transition-transform duration-200 group-hover:scale-110"
             />
           </button>
