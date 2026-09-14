@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Check, Copy, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/components/cart-provider";
+import { CardImagePreview } from "@/components/card-image-preview";
 import { EmptyState } from "@/components/empty-state";
 import { SiteHeader } from "@/components/site-header";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -356,20 +357,15 @@ export default function CartPage() {
                           className="min-w-0 rounded-none border-0 bg-transparent px-0 py-3 shadow-none sm:relative sm:overflow-hidden sm:rounded-lg sm:border sm:bg-card sm:p-2.5 sm:shadow-sm"
                         >
                           <div className="flex min-w-0 gap-3 sm:gap-2.5">
-                            <div
+                            <CardImagePreview
+                              src={item.imageUrl}
+                              alt={item.name}
                               className={cn(
-                                "relative grid h-28 aspect-[469/655] shrink-0 place-items-center overflow-hidden rounded-[7px] border-2 border-[#bca66e] bg-gradient-to-br sm:h-20 sm:rounded-[5px]",
+                                "relative grid h-28 aspect-[469/655] place-items-center rounded-[7px] border-2 border-[#bca66e] bg-gradient-to-br sm:h-20 sm:rounded-[5px]",
                                 item.gradient,
                               )}
-                            >
-                              {item.imageUrl && (
-                                <img
-                                  src={item.imageUrl}
-                                  alt=""
-                                  className="absolute inset-0 size-full object-cover"
-                                />
-                              )}
-                            </div>
+                              imageClassName="absolute inset-0"
+                            />
                             <div className="flex min-w-0 flex-1 flex-col pt-0.5 sm:block">
                               <div className="flex min-w-0 items-start justify-between gap-1">
                                 <h2 className="min-w-0 text-base leading-6 font-bold [overflow-wrap:anywhere] sm:mt-1 sm:truncate sm:pr-5 sm:text-xs sm:leading-4">

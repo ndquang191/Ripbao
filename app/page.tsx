@@ -142,7 +142,7 @@ export default async function Home() {
   ]);
   return (
     <main className="paper-grid min-h-dvh overflow-x-hidden">
-      <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5 py-5 sm:px-8 lg:py-7">
+      <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-4 py-5 sm:px-8 lg:py-7">
         <SiteHeader />
 
         <section className="grid flex-1 items-center gap-8 py-5 lg:grid-cols-[1.05fr_.95fr] lg:gap-14 lg:py-2">

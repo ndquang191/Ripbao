@@ -69,9 +69,13 @@ export default function CollectionPage() {
             icon={LibraryBig}
             title="Collection của bạn đang trống"
             description="Bắt đầu bằng cách thêm những card bạn đang sở hữu."
-            className="min-h-64 rounded-sm shadow-none"
+            className="min-h-64 rounded-sm shadow-none max-sm:[&>div]:p-5 max-sm:[&_p]:text-sm"
           >
-            <Button className="mt-4" size="sm" onClick={openDrawer}>
+            <Button
+              className="mt-4 min-h-11 w-full text-sm sm:min-h-0 sm:w-auto sm:text-xs"
+              size="sm"
+              onClick={openDrawer}
+            >
               <Plus className="size-3.5" /> Thêm card
             </Button>
           </EmptyState>
@@ -80,9 +84,13 @@ export default function CollectionPage() {
             icon={LibraryBig}
             title="Không tìm thấy card phù hợp"
             description="Thử thay đổi từ khóa hoặc bộ lọc hiện tại."
-            className="min-h-64 rounded-sm shadow-none"
+            className="min-h-64 rounded-sm shadow-none max-sm:[&>div]:p-5 max-sm:[&_p]:text-sm"
           >
-            <Button className="mt-4" size="sm" onClick={editor.clearFilters}>
+            <Button
+              className="mt-4 min-h-11 w-full text-sm sm:min-h-0 sm:w-auto sm:text-xs"
+              size="sm"
+              onClick={editor.clearFilters}
+            >
               <Plus className="size-3.5" /> Xóa bộ lọc
             </Button>
           </EmptyState>

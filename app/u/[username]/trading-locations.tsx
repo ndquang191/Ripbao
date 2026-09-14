@@ -322,7 +322,7 @@ export function TradingLocations({ username }: { username: string }) {
           <Button
             variant="outline"
             size="icon"
-            className="absolute top-1/2 right-2 size-7 -translate-y-1/2 bg-card"
+            className="absolute top-1/2 right-1 size-11 -translate-y-1/2 bg-card sm:right-2 sm:size-7"
             onClick={() => setIsEditing((editing) => !editing)}
             aria-label={
               isEditing
@@ -343,25 +343,25 @@ export function TradingLocations({ username }: { username: string }) {
       {isOwner && isEditing && (
         <form
           onSubmit={addLocation}
-          className="mt-2 grid grid-cols-[minmax(90px,1fr)_minmax(110px,1.5fr)_32px] gap-1.5 rounded-sm border border-dashed bg-secondary/45 p-2"
+          className="mt-2 grid gap-2 rounded-sm border border-dashed bg-secondary/45 p-2 sm:grid-cols-[minmax(90px,1fr)_minmax(110px,1.5fr)_32px] sm:gap-1.5"
         >
           <Input
             name="name"
             required
-            className="h-8 px-2 text-[10px]"
+            className="h-11 px-3 text-base sm:h-8 sm:px-2 sm:text-[10px]"
             placeholder="Tên điểm hẹn"
             aria-label="Tên địa điểm"
           />
           <Input
             name="detail"
-            className="h-8 px-2 text-[10px]"
+            className="h-11 px-3 text-base sm:h-8 sm:px-2 sm:text-[10px]"
             placeholder="Thời gian/ghi chú (tùy chọn)"
             aria-label="Thời gian hoặc ghi chú"
           />
           <Button
             type="submit"
             size="icon"
-            className="size-8"
+            className="h-11 w-full sm:size-8"
             aria-label="Thêm điểm hẹn"
             title="Thêm điểm hẹn"
           >

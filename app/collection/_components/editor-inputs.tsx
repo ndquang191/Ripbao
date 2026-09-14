@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Minus, Plus, Search, X } from "lucide-react";
+import { CardImagePreview } from "@/components/card-image-preview";
 import { Input } from "@/components/ui/input";
 import { currencyConfig } from "@/lib/currency";
 import { cn } from "@/lib/utils";
@@ -155,21 +156,11 @@ export function CardImage({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "h-14 w-10 shrink-0 overflow-hidden rounded-[3px] border bg-secondary",
-        className,
-      )}
-    >
-      {card.imageUrl && (
-        <img
-          src={card.imageUrl}
-          alt=""
-          loading="lazy"
-          className="size-full object-cover"
-        />
-      )}
-    </div>
+    <CardImagePreview
+      src={card.imageUrl}
+      alt={card.name}
+      className={cn("h-14 w-10", className)}
+    />
   );
 }
 

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currency";
 import { readGuestTrades, removeGuestTrade } from "@/lib/guest-trades";
+import { CardImagePreview } from "@/components/card-image-preview";
 import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast";
 
@@ -233,11 +234,11 @@ export default function TradesPage() {
   if (loading) return <PageLoading />;
   return (
     <main className="paper-grid min-h-dvh">
-      <div className="mx-auto w-full max-w-6xl px-5 py-5 sm:px-8 lg:py-7">
+      <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-8 lg:py-7">
         <SiteHeader />
-        <div className="py-7">
+        <div className="py-5 sm:py-7">
           <PageTitle icon={Handshake}>Giao dịch</PageTitle>
-          <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
+          <p className="mt-1 text-sm text-muted-foreground sm:text-xs">
             Yêu cầu mua và bán của bạn
           </p>
         </div>
@@ -247,9 +248,13 @@ export default function TradesPage() {
             title="Không thể tải giao dịch"
             description={loadError}
             variant="error"
-            className="min-h-64"
+            className="min-h-64 max-sm:[&>div]:p-5 max-sm:[&_p]:text-sm"
           >
-            <Button className="mt-4" size="sm" onClick={() => void load()}>
+            <Button
+              className="mt-4 min-h-11 w-full text-sm sm:min-h-0 sm:w-auto sm:text-xs"
+              size="sm"
+              onClick={() => void load()}
+            >
               Thử lại
             </Button>
           </EmptyState>
@@ -258,7 +263,7 @@ export default function TradesPage() {
             icon={Handshake}
             title="Chưa có yêu cầu giao dịch"
             description="Chọn card trong collection của người khác và gửi từ giỏ hàng."
-            className="min-h-64"
+            className="min-h-64 max-sm:[&>div]:p-5 max-sm:[&_p]:text-sm"
           />
         ) : (
           <div className="space-y-4">
@@ -277,18 +282,18 @@ export default function TradesPage() {
               );
               return (
                 <Card key={trade.id} className="overflow-hidden">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-card/80 px-4 py-3">
-                    <div>
+                  <div className="flex items-start justify-between gap-3 border-b bg-card/80 px-3 py-3 sm:items-center sm:px-4">
+                    <div className="min-w-0">
                       <span className="text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
                         {isSeller ? "Yêu cầu mua từ" : "Gửi tới"}
                       </span>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex min-w-0 items-center gap-2">
                         {trade.counterpartyIsGuest ? (
-                          <strong>{other}</strong>
+                          <strong className="min-w-0 truncate">{other}</strong>
                         ) : (
                           <Link
                             href={`/u/${trade.counterpartyUsername}`}
-                            className="font-bold hover:underline"
+                            className="min-w-0 truncate py-1 text-base font-bold hover:underline sm:py-0 sm:text-sm"
                           >
                             {other}
                           </Link>
@@ -298,7 +303,7 @@ export default function TradesPage() {
                             href={facebookUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="grid size-6 place-items-center rounded-sm border bg-card text-[10px] font-black text-primary transition-colors hover:bg-secondary"
+                            className="grid size-10 shrink-0 place-items-center rounded-sm border bg-card text-sm font-black text-primary transition-colors hover:bg-secondary sm:size-6 sm:text-[10px]"
                             aria-label={`Mở Facebook của ${other}`}
                             title="Mở Facebook"
                           >
@@ -308,7 +313,7 @@ export default function TradesPage() {
                       </div>
                     </div>
                     <span
-                      className={`rounded-full px-2.5 py-1 text-[9px] font-extrabold ${trade.status === "completed" ? "bg-[#dce9ca] text-[#426026]" : trade.status === "cancelled" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"}`}
+                      className={`shrink-0 rounded-full px-2.5 py-1.5 text-[10px] font-extrabold sm:py-1 sm:text-[9px] ${trade.status === "completed" ? "bg-[#dce9ca] text-[#426026]" : trade.status === "cancelled" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"}`}
                     >
                       {statusLabel[trade.status]}
                     </span>
@@ -317,36 +322,33 @@ export default function TradesPage() {
                     {trade.items.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center gap-3 px-4 py-3"
+                        className="relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 px-3 py-3 sm:flex sm:items-center sm:px-4"
                       >
-                        <div className="h-16 aspect-[469/655] shrink-0 overflow-hidden rounded-sm border bg-secondary">
-                          {item.imageUrl && (
-                            <img
-                              src={item.imageUrl}
-                              alt=""
-                              className="size-full object-cover"
-                            />
-                          )}
-                        </div>
+                        <CardImagePreview
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="h-24 aspect-[469/655] sm:h-16"
+                        />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-bold">
+                          <p className="line-clamp-2 text-base leading-5 font-bold sm:truncate sm:text-xs sm:leading-4">
                             {item.name}
                           </p>
-                          <p className="text-[9px] text-muted-foreground">
+                          <p className="mt-1 text-xs leading-5 text-muted-foreground sm:mt-0 sm:text-[9px] sm:leading-normal">
                             {item.set} · {String(item.number).padStart(3, "0")}{" "}
                             · {item.finish === "foil" ? "Foil" : "No Foil"} ·{" "}
                             {item.condition}
                           </p>
-                          <p className="mt-1 text-[10px] font-semibold">
+                          <p className="mt-1 text-sm font-semibold sm:text-[10px]">
                             {Number(item.unitPrice)
                               ? formatCurrency(Number(item.unitPrice))
                               : "Liên hệ"}
                           </p>
                         </div>
                         {editable ? (
-                          <div className="flex items-center rounded-sm border">
+                          <div className="col-span-2 flex w-full items-center rounded-sm border bg-background sm:col-span-1 sm:w-auto">
                             <button
-                              className="grid size-7 place-items-center disabled:opacity-30"
+                              className="grid size-11 shrink-0 place-items-center disabled:opacity-30 sm:size-7"
+                              aria-label={`Giảm số lượng ${item.name}`}
                               disabled={item.quantity <= 1}
                               onClick={() =>
                                 changeQuantity(
@@ -358,11 +360,12 @@ export default function TradesPage() {
                             >
                               <Minus className="size-3" />
                             </button>
-                            <span className="w-7 text-center text-[10px] font-bold">
+                            <span className="min-w-10 flex-1 text-center text-sm font-bold sm:w-7 sm:min-w-0 sm:flex-none sm:text-[10px]">
                               {item.quantity}
                             </span>
                             <button
-                              className="grid size-7 place-items-center disabled:opacity-30"
+                              className="grid size-11 shrink-0 place-items-center disabled:opacity-30 sm:size-7"
+                              aria-label={`Tăng số lượng ${item.name}`}
                               disabled={item.quantity >= item.stock}
                               onClick={() =>
                                 changeQuantity(
@@ -376,24 +379,27 @@ export default function TradesPage() {
                             </button>
                           </div>
                         ) : (
-                          <strong className="text-xs">×{item.quantity}</strong>
+                          <strong className="absolute right-3 text-sm sm:static sm:text-xs">
+                            ×{item.quantity}
+                          </strong>
                         )}
                       </div>
                     ))}
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-secondary/30 px-4 py-3">
-                    <div className="text-xs">
+                  <div className="flex flex-col gap-3 border-t bg-secondary/30 px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-sm sm:block sm:text-xs">
                       <strong>{totalQuantity} lá</strong>
                       <span className="mx-1.5 text-muted-foreground">·</span>
                       Tổng tạm tính: <strong>{formatCurrency(total)}</strong>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
                       {trade.status === "pending" && (
                         <>
                           {editable && (
                             <Button
                               variant="outline"
                               size="sm"
+                              className="min-h-11 text-sm sm:min-h-0 sm:text-xs"
                               disabled={busy !== null}
                               onClick={() => act(trade, "update")}
                             >
@@ -403,7 +409,7 @@ export default function TradesPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-destructive/50 text-destructive hover:border-destructive hover:bg-destructive/10"
+                            className="min-h-11 border-destructive/50 text-sm text-destructive hover:border-destructive hover:bg-destructive/10 sm:min-h-0 sm:text-xs"
                             disabled={busy !== null}
                             onClick={() => act(trade, "cancel")}
                           >
@@ -412,6 +418,7 @@ export default function TradesPage() {
                           {editable && (
                             <Button
                               size="sm"
+                              className="col-span-2 min-h-11 text-sm sm:col-span-1 sm:min-h-0 sm:text-xs"
                               disabled={busy !== null}
                               onClick={() => act(trade, "complete")}
                             >
@@ -424,7 +431,7 @@ export default function TradesPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-muted-foreground hover:text-destructive"
+                          className="col-span-2 min-h-11 whitespace-normal text-sm text-muted-foreground hover:text-destructive sm:col-span-1 sm:min-h-0 sm:text-xs"
                           disabled={busy !== null}
                           onClick={() => void deleteTrade(trade)}
                         >
@@ -435,7 +442,7 @@ export default function TradesPage() {
                     </div>
                   </div>
                   {trade.buyerContactPhone && (
-                    <div className="border-t bg-[#edf3e5] px-4 py-2 text-xs">
+                    <div className="border-t bg-[#edf3e5] px-3 py-3 text-sm sm:px-4 sm:py-2 sm:text-xs">
                       SĐT liên hệ:{" "}
                       <a
                         className="font-bold hover:underline"

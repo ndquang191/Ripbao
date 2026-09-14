@@ -101,10 +101,10 @@ export default async function SellerPage({
 
   return (
     <main className="paper-grid min-h-dvh">
-      <div className="mx-auto w-full max-w-6xl px-5 py-5 sm:px-8 lg:py-7">
+      <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-8 lg:py-7">
         <SiteHeader />
 
-        <section className="border-b py-7">
+        <section className="border-b py-5 sm:py-7">
           <div>
             <div className="inline-flex max-w-full items-center gap-3 rounded-lg border border-[#8ba55e] border-l-4 bg-[#edf3e5] px-4 py-3 shadow-sm">
               <PageTitle
@@ -120,7 +120,7 @@ export default async function SellerPage({
                   rel="noreferrer"
                   className={cn(
                     buttonVariants({ variant: "outline", size: "icon" }),
-                    "size-8 shrink-0",
+                    "size-11 shrink-0 sm:size-8",
                   )}
                   aria-label={`Mở Facebook của ${displayName}`}
                   title="Mở Facebook"

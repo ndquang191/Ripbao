@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useId } from "react";
+import { useId, useRef } from "react";
 import { Check, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  announceDropdownOpen,
-  DROPDOWN_OPEN_EVENT,
-} from "@/lib/dropdown-coordination";
 import { cn } from "@/lib/utils";
+import { useCoordinatedDropdown } from "@/lib/use-coordinated-dropdown";
 import { defaultMin, defaultMultiplier } from "../_lib/collection-utils";
 import { QUICK_PRICING_RARITY_COLORS } from "../_lib/constants";
 import { MoneyInput, MultiplierInput } from "./editor-inputs";
@@ -24,33 +21,32 @@ export function PricingMenu(props: {
   apply: () => void;
 }) {
   const dropdownId = useId();
-  useEffect(() => {
-    const closeForOtherDropdown = (event: Event) => {
-      if (!(event instanceof CustomEvent) || event.detail !== dropdownId)
-        props.setOpen(false);
-    };
-    document.addEventListener(DROPDOWN_OPEN_EVENT, closeForOtherDropdown);
-    return () =>
-      document.removeEventListener(DROPDOWN_OPEN_EVENT, closeForOtherDropdown);
-  }, [dropdownId, props.setOpen]);
-  useEffect(() => {
-    if (props.open) announceDropdownOpen(dropdownId);
-  }, [dropdownId, props.open]);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useCoordinatedDropdown(props.open, dropdownId, rootRef, () =>
+    props.setOpen(false),
+  );
 
   return (
-    <div className="relative">
+    <div ref={rootRef} className="relative">
       <Button
         variant="outline"
         size="sm"
+        className="min-h-11 w-full text-sm sm:min-h-0 sm:w-auto sm:text-xs"
         onClick={() => props.setOpen(!props.open)}
+        aria-expanded={props.open}
+        aria-haspopup="dialog"
       >
         <SlidersHorizontal className="size-3.5" /> Thiết lập giá{" "}
         <ChevronDown className={cn("size-3", props.open && "rotate-180")} />
       </Button>
       {props.open && (
-        <div className="absolute right-0 top-full z-40 mt-2 w-[min(92vw,420px)] rounded-sm border bg-card p-3 shadow-xl">
-          <strong className="text-xs">Thiết lập giá nhanh</strong>
-          <div className="mt-3 grid grid-cols-[1fr_120px_90px] items-center gap-2">
+        <div
+          className="fixed inset-x-4 top-24 z-40 max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-md border bg-card p-4 shadow-xl sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:max-h-none sm:w-[min(92vw,420px)] sm:overflow-visible sm:rounded-sm sm:p-3"
+          role="dialog"
+          aria-label="Thiết lập giá nhanh"
+        >
+          <strong className="text-base sm:text-xs">Thiết lập giá nhanh</strong>
+          <div className="mt-3 grid grid-cols-[minmax(0,1fr)_minmax(96px,120px)_72px] items-center gap-2 max-sm:[&_input]:h-11 max-sm:[&_input]:text-sm sm:grid-cols-[1fr_120px_90px]">
             <span className="text-[9px] font-bold text-muted-foreground">
               Độ hiếm
             </span>
@@ -83,11 +79,16 @@ export function PricingMenu(props: {
               </div>
             ))}
           </div>
-          <div className="mt-3 flex items-center justify-between border-t pt-3">
-            <span className="text-[9px] text-muted-foreground">
+          <div className="mt-4 flex items-center justify-between gap-3 border-t pt-3 sm:mt-3">
+            <span className="text-xs text-muted-foreground sm:text-[9px]">
               {props.count} loại sẽ cập nhật
             </span>
-            <Button size="sm" disabled={!props.count} onClick={props.apply}>
+            <Button
+              size="sm"
+              className="min-h-11 text-sm sm:min-h-0 sm:text-xs"
+              disabled={!props.count}
+              onClick={props.apply}
+            >
               <Check className="size-3" /> Áp dụng
             </Button>
           </div>

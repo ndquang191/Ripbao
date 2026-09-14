@@ -32,11 +32,11 @@ export function DomainSection(props: {
       style={{ borderColor: color }}
     >
       <header
-        className="flex items-center justify-between px-3 py-1.5 text-white"
+        className="flex items-center justify-between px-3 py-2.5 text-white sm:py-1.5"
         style={{ backgroundColor: color }}
       >
-        <h2 className="text-xs font-extrabold">{props.domain}</h2>
-        <span className="text-[9px] font-medium text-white/80">
+        <h2 className="text-sm font-extrabold sm:text-xs">{props.domain}</h2>
+        <span className="text-xs font-medium text-white/80 sm:text-[9px]">
           {props.cards.length} loại · {copies} bản
         </span>
       </header>
@@ -120,15 +120,17 @@ function CardRow(props: {
   return (
     <div
       className={cn(
-        "grid gap-3 border-t p-3 first:border-t-0 md:grid-cols-[52px_minmax(170px,1fr)_130px_112px_132px_92px_120px] md:items-center md:gap-2",
+        "grid gap-4 border-t p-3 first:border-t-0 md:grid-cols-[52px_minmax(170px,1fr)_130px_112px_132px_92px_120px] md:items-center md:gap-2",
         !edit.quantity && "bg-destructive/5",
       )}
     >
       <div className="flex gap-3 md:contents">
         <CardImage card={card} />
         <div className="min-w-0 flex-1 self-center">
-          <strong className="block truncate text-xs">{card.name}</strong>
-          <p className="mt-1 text-[9px] text-muted-foreground md:hidden">
+          <strong className="block text-base leading-5 font-bold md:truncate md:text-xs md:leading-4">
+            {card.name}
+          </strong>
+          <p className="mt-1 text-xs text-muted-foreground md:hidden">
             {card.set} · #{card.collectorNumber} · {card.rarity}
           </p>
           <FinishInput
@@ -147,8 +149,8 @@ function CardRow(props: {
         <strong>{card.set}</strong>{" "}
         <span className="text-muted-foreground">#{card.collectorNumber}</span>
       </div>
-      <div className="grid grid-cols-3 gap-2 md:contents">
-        <label className="text-[9px] font-bold text-muted-foreground md:hidden">
+      <div className="grid grid-cols-2 gap-3 md:contents">
+        <label className="col-span-2 text-xs font-bold text-muted-foreground max-md:[&_button]:size-11 max-md:[&_input]:h-11 max-md:[&_input]:flex-1 md:hidden">
           Số lượng
           <QuantityInput
             value={edit.quantity}
@@ -163,14 +165,14 @@ function CardRow(props: {
             set={(quantity) => props.updateCard(card.id, { quantity })}
           />
         </div>
-        <label className="text-[9px] font-bold text-muted-foreground">
+        <label className="text-xs font-bold text-muted-foreground max-md:[&_input]:h-11 max-md:[&_input]:text-sm md:text-[9px]">
           <span className="md:hidden">Giá Min</span>
           <MoneyInput
             value={edit.minPrice}
             set={(minPrice) => props.updateCard(card.id, { minPrice })}
           />
         </label>
-        <label className="text-[9px] font-bold text-muted-foreground">
+        <label className="text-xs font-bold text-muted-foreground max-md:[&_input]:h-11 max-md:[&_input]:text-sm md:text-[9px]">
           <span className="md:hidden">× TCG</span>
           <MultiplierInput
             value={edit.tcgMultiplier}
@@ -182,10 +184,10 @@ function CardRow(props: {
         </label>
       </div>
       <div className="text-right md:border-l md:pl-3">
-        <span className="text-[9px] font-bold text-muted-foreground md:hidden">
+        <span className="text-xs font-bold text-muted-foreground md:hidden">
           Giá cuối{" "}
         </span>
-        <strong className="text-[10px] text-[#506b32]">
+        <strong className="text-sm text-[#506b32] md:text-[10px]">
           {finalPrice(card, edit)}
         </strong>
       </div>

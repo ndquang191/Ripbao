@@ -22,7 +22,7 @@ export function CollectionFilters({
       values.map((item, itemIndex) => (itemIndex === index ? value : item)),
     );
   return (
-    <div className="mb-4 grid gap-2 rounded-sm border bg-card p-3 sm:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_repeat(4,140px)]">
+    <div className="mb-4 grid gap-2 rounded-sm border bg-card p-3 max-sm:[&_input]:h-11 max-sm:[&_input]:text-sm sm:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_repeat(4,140px)]">
       <SearchBox
         value={query}
         set={setQuery}

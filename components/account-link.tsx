@@ -1,18 +1,22 @@
 "use client";
 
-import { FormEvent, useEffect, useId, useState } from "react";
+import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { Handshake, LibraryBig, LogIn, LogOut, Settings, X } from "lucide-react";
+import {
+  Handshake,
+  LibraryBig,
+  LogIn,
+  LogOut,
+  Settings,
+  X,
+} from "lucide-react";
 import { CartLink } from "@/components/cart-link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast";
-import {
-  announceDropdownOpen,
-  DROPDOWN_OPEN_EVENT,
-} from "@/lib/dropdown-coordination";
+import { useCoordinatedDropdown } from "@/lib/use-coordinated-dropdown";
 
 export function AccountLink({ className }: { className?: string }) {
   const mobileControl =
@@ -33,20 +37,11 @@ export function AccountLink({ className }: { className?: string }) {
   const toast = useToast();
   const [pendingTrades, setPendingTrades] = useState(0);
   const accountMenuId = useId();
+  const accountMenuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const closeForOtherDropdown = (event: Event) => {
-      if ((event as CustomEvent<string>).detail !== accountMenuId)
-        setAccountMenuOpen(false);
-    };
-    document.addEventListener(DROPDOWN_OPEN_EVENT, closeForOtherDropdown);
-    return () =>
-      document.removeEventListener(DROPDOWN_OPEN_EVENT, closeForOtherDropdown);
-  }, [accountMenuId]);
-
-  useEffect(() => {
-    if (accountMenuOpen) announceDropdownOpen(accountMenuId);
-  }, [accountMenuId, accountMenuOpen]);
+  useCoordinatedDropdown(accountMenuOpen, accountMenuId, accountMenuRef, () =>
+    setAccountMenuOpen(false),
+  );
 
   useEffect(() => {
     if (!username) {
@@ -66,11 +61,10 @@ export function AccountLink({ className }: { className?: string }) {
   }, [username]);
 
   useEffect(() => {
-    if (!profileOpen && !accountMenuOpen && !logoutConfirmOpen) return;
+    if (!profileOpen && !logoutConfirmOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setProfileOpen(false);
-      setAccountMenuOpen(false);
       setLogoutConfirmOpen(false);
     };
     document.addEventListener("keydown", closeOnEscape);
@@ -81,7 +75,7 @@ export function AccountLink({ className }: { className?: string }) {
       document.removeEventListener("keydown", closeOnEscape);
       if (shouldLockScroll) document.body.style.overflow = previousOverflow;
     };
-  }, [profileOpen, accountMenuOpen, logoutConfirmOpen]);
+  }, [profileOpen, logoutConfirmOpen]);
 
   const openProfile = () => {
     if (!username) return;
@@ -200,7 +194,11 @@ export function AccountLink({ className }: { className?: string }) {
             "relative px-2.5",
             mobileControl,
           )}
-          aria-label={pendingTrades > 0 ? `Giao dịch, ${pendingTrades} yêu cầu đang chờ` : "Giao dịch"}
+          aria-label={
+            pendingTrades > 0
+              ? `Giao dịch, ${pendingTrades} yêu cầu đang chờ`
+              : "Giao dịch"
+          }
           title="Giao dịch"
         >
           <Handshake className="size-3.5" />
@@ -212,7 +210,10 @@ export function AccountLink({ className }: { className?: string }) {
           )}
         </Link>
         <CartLink className={mobileControl} />
-        <div className="relative flex h-8 items-center max-sm:h-11">
+        <div
+          ref={accountMenuRef}
+          className="relative flex h-8 items-center max-sm:h-11"
+        >
           <button
             type="button"
             onClick={() => setAccountMenuOpen((open) => !open)}
@@ -232,53 +233,45 @@ export function AccountLink({ className }: { className?: string }) {
             />
           </button>
           {accountMenuOpen && (
-            <>
+            <div
+              className={cn(
+                "absolute right-0 top-full z-50 mt-2 w-44 rounded-md border bg-card p-1.5 shadow-xl",
+                "max-sm:w-52 max-sm:[&_[role=menuitem]]:min-h-11 max-sm:[&_[role=menuitem]]:text-sm",
+              )}
+              role="menu"
+            >
+              <Link
+                href="/collection"
+                onClick={() => setAccountMenuOpen(false)}
+                className="flex h-9 items-center gap-2 rounded-sm px-2.5 text-xs font-bold hover:bg-secondary"
+                role="menuitem"
+              >
+                <LibraryBig className="size-3.5" />
+                Collection
+              </Link>
               <button
                 type="button"
-                className="fixed inset-0 z-40 cursor-default"
-                onClick={() => setAccountMenuOpen(false)}
-                aria-label="Đóng menu tài khoản"
-              />
-              <div
-                className={cn(
-                  "absolute right-0 top-full z-50 mt-2 w-44 rounded-md border bg-card p-1.5 shadow-xl",
-                  "max-sm:w-52 max-sm:[&_[role=menuitem]]:min-h-11 max-sm:[&_[role=menuitem]]:text-sm",
-                )}
-                role="menu"
+                onClick={openProfile}
+                className="flex h-9 w-full items-center gap-2 rounded-sm px-2.5 text-xs font-bold hover:bg-secondary"
+                role="menuitem"
               >
-                <Link
-                  href="/collection"
-                  onClick={() => setAccountMenuOpen(false)}
-                  className="flex h-9 items-center gap-2 rounded-sm px-2.5 text-xs font-bold hover:bg-secondary"
-                  role="menuitem"
-                >
-                  <LibraryBig className="size-3.5" />
-                  Collection
-                </Link>
-                <button
-                  type="button"
-                  onClick={openProfile}
-                  className="flex h-9 w-full items-center gap-2 rounded-sm px-2.5 text-xs font-bold hover:bg-secondary"
-                  role="menuitem"
-                >
-                  <Settings className="size-3.5" />
-                  Cài đặt
-                </button>
-                <div className="my-1 border-t" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAccountMenuOpen(false);
-                    setLogoutConfirmOpen(true);
-                  }}
-                  className="flex h-9 w-full items-center gap-2 rounded-sm px-2.5 text-xs font-bold text-destructive hover:bg-destructive/10"
-                  role="menuitem"
-                >
-                  <LogOut className="size-3.5" />
-                  Đăng xuất
-                </button>
-              </div>
-            </>
+                <Settings className="size-3.5" />
+                Cài đặt
+              </button>
+              <div className="my-1 border-t" />
+              <button
+                type="button"
+                onClick={() => {
+                  setAccountMenuOpen(false);
+                  setLogoutConfirmOpen(true);
+                }}
+                className="flex h-9 w-full items-center gap-2 rounded-sm px-2.5 text-xs font-bold text-destructive hover:bg-destructive/10"
+                role="menuitem"
+              >
+                <LogOut className="size-3.5" />
+                Đăng xuất
+              </button>
+            </div>
           )}
         </div>
       </div>

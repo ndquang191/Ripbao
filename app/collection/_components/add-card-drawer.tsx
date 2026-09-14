@@ -13,7 +13,12 @@ import {
   uniqueCards,
 } from "../_lib/collection-utils";
 import { type CardData, type Edit } from "../_lib/models";
-import { CardImage, FinishInput, QuantityInput, SearchBox } from "./editor-inputs";
+import {
+  CardImage,
+  FinishInput,
+  QuantityInput,
+  SearchBox,
+} from "./editor-inputs";
 
 export function AddCardDrawer(props: {
   savedIds: Set<string>;
@@ -56,9 +61,9 @@ export function AddCardDrawer(props: {
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-title"
-        className="absolute inset-y-0 right-0 flex w-full flex-col bg-background shadow-2xl outline-none sm:w-[min(92vw,760px)]"
+        className="absolute inset-y-0 right-0 flex h-[100dvh] w-full flex-col bg-background shadow-2xl outline-none sm:w-[min(92vw,760px)]"
       >
-        <header className="flex items-center justify-between border-b bg-card p-4">
+        <header className="flex shrink-0 items-center justify-between border-b bg-card px-4 py-3 sm:py-4">
           <div>
             <h2 id="drawer-title" className="font-serif text-lg font-bold">
               Thêm card
@@ -70,12 +75,12 @@ export function AddCardDrawer(props: {
           <button
             onClick={props.close}
             aria-label="Đóng"
-            className="grid size-9 place-items-center rounded-sm hover:bg-secondary"
+            className="grid size-11 place-items-center rounded-sm hover:bg-secondary sm:size-9"
           >
             <X />
           </button>
         </header>
-        <div className="space-y-2 border-b bg-card p-3">
+        <div className="shrink-0 space-y-2 border-b bg-card p-3 max-sm:[&_input]:h-11 max-sm:[&_input]:text-sm">
           <SearchBox
             value={catalog.query}
             set={catalog.setQuery}
@@ -117,18 +122,18 @@ export function AddCardDrawer(props: {
               return (
                 <article
                   key={card.id}
-                  className="flex gap-3 rounded-sm border bg-card p-2"
+                  className="flex gap-3 rounded-sm border bg-card p-3 sm:p-2"
                 >
                   <CardImage card={card} className="h-[88px] w-16" />
                   <div className="min-w-0 flex-1">
-                    <strong className="block truncate text-[11px]">
+                    <strong className="line-clamp-2 text-sm leading-5 sm:block sm:truncate sm:text-[11px] sm:leading-normal">
                       {card.name}
                     </strong>
-                    <p className="mt-1 text-[9px] text-muted-foreground">
+                    <p className="mt-1 text-xs text-muted-foreground sm:text-[9px]">
                       {card.set} · #{card.collectorNumber} · {card.rarity}
                     </p>
                     <p
-                      className="truncate text-[9px]"
+                      className="truncate text-xs sm:text-[9px]"
                       style={{ color: domainColor(card.domains[0]) }}
                     >
                       {card.domains.join(" · ") || "Không có Domain"}
@@ -136,13 +141,19 @@ export function AddCardDrawer(props: {
                     <FinishInput
                       value={props.draft[card.id]?.finish ?? "nonfoil"}
                       name={card.name}
-                      set={(finish) => props.updateCard(card.id, {
-                        finish,
-                        minPrice: props.draft[card.id]?.minPrice ?? defaultMin(card.rarity),
-                        tcgMultiplier: props.draft[card.id]?.tcgMultiplier ?? defaultMultiplier(card.rarity),
-                      })}
+                      set={(finish) =>
+                        props.updateCard(card.id, {
+                          finish,
+                          minPrice:
+                            props.draft[card.id]?.minPrice ??
+                            defaultMin(card.rarity),
+                          tcgMultiplier:
+                            props.draft[card.id]?.tcgMultiplier ??
+                            defaultMultiplier(card.rarity),
+                        })
+                      }
                     />
-                    <div className="mt-2 flex items-center justify-between">
+                    <div className="mt-2 flex items-center justify-between max-sm:[&_button]:size-11 max-sm:[&_input]:h-11 max-sm:[&_input]:flex-1">
                       <QuantityInput
                         value={quantity}
                         name={card.name}
@@ -181,16 +192,16 @@ export function AddCardDrawer(props: {
           )}
           <div ref={catalog.moreRef} className="h-2" />
         </div>
-        <footer className="flex items-center justify-between border-t bg-card p-4">
-          <span className="text-[10px] text-muted-foreground">
+        <footer className="flex shrink-0 flex-col gap-3 border-t bg-card p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:p-4">
+          <span className="text-xs text-muted-foreground sm:text-[10px]">
             <strong className="text-foreground">{added.length}</strong> loại ·{" "}
             <strong className="text-foreground">
               {added.reduce((total, [, edit]) => total + edit.quantity, 0)}
             </strong>{" "}
             bản vừa thêm
           </span>
-          <div className="flex items-center gap-3">
-            <label className="flex cursor-pointer items-center gap-2 text-[10px] font-bold">
+          <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
+            <label className="flex min-h-11 cursor-pointer items-center gap-2 text-xs font-bold sm:min-h-0 sm:text-[10px]">
               <input
                 type="checkbox"
                 checked={showAddedOnly}
@@ -199,7 +210,9 @@ export function AddCardDrawer(props: {
               />
               Chỉ hiện đã thêm
             </label>
-            <Button onClick={props.close}>Xong</Button>
+            <Button className="min-h-11 px-6" onClick={props.close}>
+              Xong
+            </Button>
           </div>
         </footer>
       </aside>

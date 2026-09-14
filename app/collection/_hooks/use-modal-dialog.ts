@@ -12,6 +12,7 @@ export function useModalDialog(
   }, [close]);
 
   useEffect(() => {
+    const trigger = document.activeElement as HTMLElement | null;
     const oldOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     panel.current?.focus();
@@ -37,6 +38,7 @@ export function useModalDialog(
     return () => {
       document.body.style.overflow = oldOverflow;
       document.removeEventListener("keydown", handleKey);
+      if (trigger?.isConnected) trigger.focus();
     };
   }, [panel]);
 }

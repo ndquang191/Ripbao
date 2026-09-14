@@ -26,27 +26,34 @@ export function CollectionToolbar(props: {
   saveChanges: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-4 py-6 lg:flex-row lg:items-end lg:justify-between">
-      <div className="flex gap-3 items-center">
+    <div className="flex flex-col gap-4 py-5 sm:py-6 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
         <PageTitle icon={LibraryBig}>Bộ sưu tập của bạn</PageTitle>
-        <p className="mt-2 text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground sm:mt-2 sm:text-xs">
           <strong className="text-foreground">{props.typeCount}</strong> loại ·{" "}
           <strong className="text-foreground">{props.copyCount}</strong> bản
           {props.dirty && (
-            <span className="ml-2 text-[#966027]">• Có thay đổi chưa lưu</span>
+            <span className="block text-[#966027] sm:ml-2 sm:inline">
+              • Có thay đổi chưa lưu
+            </span>
           )}
         </p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         {props.username && (
           <Link
             href={`/u/${encodeURIComponent(props.username)}`}
-            className={buttonVariants({ variant: "outline", size: "sm" })}
+            className={`${buttonVariants({ variant: "outline", size: "sm" })} min-h-11 text-sm sm:min-h-0 sm:text-xs`}
           >
             <Eye className="size-3.5" /> Xem trước
           </Link>
         )}
-        <Button variant="outline" size="sm" onClick={props.openDrawer}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="min-h-11 text-sm sm:min-h-0 sm:text-xs"
+          onClick={props.openDrawer}
+        >
           <Plus className="size-3.5" /> Thêm card
         </Button>
         <PricingMenu
@@ -62,6 +69,7 @@ export function CollectionToolbar(props: {
         />
         <Button
           size="sm"
+          className="col-span-2 min-h-11 text-sm sm:col-span-1 sm:min-h-0 sm:text-xs"
           disabled={!props.dirty || props.saving}
           onClick={props.saveChanges}
         >

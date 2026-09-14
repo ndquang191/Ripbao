@@ -90,7 +90,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <button
                 type="button"
                 onClick={() => dismiss(toast.id)}
-                className="grid size-6 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
+                className="-m-2 grid size-11 shrink-0 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground sm:m-0 sm:size-6"
                 aria-label="Đóng thông báo"
               >
                 <X className="size-3.5" />

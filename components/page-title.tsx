@@ -21,7 +21,7 @@ export function PageTitle({
       {backHref && (
         <Link
           href={backHref}
-          className="mb-3 inline-flex items-center gap-1 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground"
+          className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-muted-foreground transition-colors hover:text-foreground sm:min-h-0 sm:text-xs"
         >
           <ArrowLeft className="size-3.5" /> {backLabel}
         </Link>

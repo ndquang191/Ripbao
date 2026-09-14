@@ -245,9 +245,8 @@ export function Collection({
           {!isOwner && (
             <label
               className={cn(
-                "flex h-8 cursor-pointer items-center gap-2 rounded-sm border px-3 text-[10px] font-bold transition-colors",
-                onlySelected &&
-                  "border-[#8ba55e] bg-[#edf3e5] text-[#506b32]",
+                "flex h-11 cursor-pointer items-center gap-2 rounded-sm border px-3 text-sm font-bold transition-colors sm:h-8 sm:text-[10px]",
+                onlySelected && "border-[#8ba55e] bg-[#edf3e5] text-[#506b32]",
               )}
             >
               <input
@@ -263,9 +262,7 @@ export function Collection({
             label="Sắp xếp"
             value={sort}
             options={sortOptions}
-            onChange={(value) =>
-              setSort(value as (typeof sortOptions)[number])
-            }
+            onChange={(value) => setSort(value as (typeof sortOptions)[number])}
             allowEmpty={false}
             className="[&>summary]:min-w-36"
           />
@@ -437,10 +434,14 @@ export function Collection({
                         </h3>
                       </div>
                     </div>
-                    <span className={cn(
-                      "mt-2 inline-block rounded-sm border px-1.5 py-0.5 text-[10px] font-bold",
-                      card.finish === "Foil" ? "border-primary/30 bg-accent/40 text-primary" : "text-muted-foreground",
-                    )}>
+                    <span
+                      className={cn(
+                        "mt-2 inline-block rounded-sm border px-1.5 py-0.5 text-[10px] font-bold",
+                        card.finish === "Foil"
+                          ? "border-primary/30 bg-accent/40 text-primary"
+                          : "text-muted-foreground",
+                      )}
+                    >
                       {card.finish === "Foil" ? "Foil" : "Không foil"}
                     </span>
                     <div className="mt-2 flex items-center justify-between border-t pt-1.5">
@@ -455,7 +456,7 @@ export function Collection({
                       <div className="mt-2 border-t pt-2 sm:hidden">
                         {cartItem ? (
                           <div
-                            className="flex h-9 items-center overflow-hidden rounded-md border bg-background"
+                            className="flex h-11 items-center overflow-hidden rounded-md border bg-background sm:h-9"
                             aria-label={`${card.name}: đã chọn ${cartItem.quantity} trên ${card.quantity}`}
                           >
                             <button
@@ -496,14 +497,17 @@ export function Collection({
                             type="button"
                             variant="accent"
                             size="sm"
-                            className="h-9 w-full px-2 text-[10px]"
+                            className="h-11 w-full px-2 text-sm sm:h-9 sm:text-[10px]"
                             onClick={(event) => {
                               event.stopPropagation();
                               addCardToCart();
                             }}
                             aria-label={`Thêm ${card.name} vào giỏ`}
                           >
-                            <ShoppingBag className="size-3.5" strokeWidth={2.25} />
+                            <ShoppingBag
+                              className="size-3.5"
+                              strokeWidth={2.25}
+                            />
                             Thêm vào giỏ
                           </Button>
                         )}

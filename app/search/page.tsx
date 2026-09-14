@@ -138,10 +138,10 @@ export default async function SearchPage({
 
   return (
     <main className="paper-grid min-h-dvh">
-      <div className="mx-auto w-full max-w-6xl px-5 py-5 sm:px-8 lg:py-7">
+      <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-8 lg:py-7">
         <SiteHeader />
 
-        <section className="py-7">
+        <section className="py-5 sm:py-7">
           <form action="/search" className="relative max-w-3xl" role="search">
             <Search className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -149,7 +149,7 @@ export default async function SearchPage({
               required
               defaultValue={query}
               autoFocus
-              className="h-12 bg-card pr-24 pl-10 shadow-sm"
+              className="h-12 bg-card pr-20 pl-10 text-base shadow-sm sm:pr-24 sm:text-sm"
               placeholder="Bạn cần tìm card, set hoặc mã card nào?"
               aria-label="Tìm collection đang bán card"
             />
@@ -157,20 +157,20 @@ export default async function SearchPage({
               type="submit"
               className={cn(
                 buttonVariants({ size: "sm" }),
-                "absolute top-2 right-2 h-8",
+                "absolute top-1 right-1 min-h-10 px-4 text-sm sm:top-2 sm:right-2 sm:min-h-0 sm:h-8 sm:px-3 sm:text-xs",
               )}
             >
               Tìm
             </button>
           </form>
 
-          <div className="mt-7 flex flex-wrap items-end justify-between gap-2">
+          <div className="mt-6 flex flex-wrap items-end justify-between gap-2 sm:mt-7">
             <div>
               <h1 className="font-serif text-2xl font-semibold tracking-[-0.02em] text-[#5f793f]">
                 {query ? `Kết quả cho “${query}”` : "Tìm card đang bán"}
               </h1>
               {query && (
-                <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
+                <p className="mt-1 text-sm text-muted-foreground sm:text-xs">
                   {collections.length} collection · {matchingCards} lựa chọn phù
                   hợp
                 </p>
@@ -178,18 +178,18 @@ export default async function SearchPage({
             </div>
           </div>
 
-          <div className="mt-5 space-y-5">
+          <div className="mt-4 space-y-4 sm:mt-5 sm:space-y-5">
             {collections.map((collection) => (
               <Card
                 key={collection.username}
                 className="overflow-hidden bg-card"
               >
                 <CardContent className="p-0">
-                  <div className="flex items-center gap-3 border-b bg-card px-4 py-3">
+                  <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 border-b bg-card px-3 py-3 sm:flex sm:px-4">
                     <img
                       src={`https://api.dicebear.com/10.x/critters/svg?scale=0.94&borderRadius=50&seed=${encodeURIComponent(collection.displayName)}`}
                       alt=""
-                      className="size-9 rounded-full border bg-card"
+                      className="size-11 rounded-full border bg-card sm:size-9"
                     />
                     <div className="min-w-0 flex-1">
                       <h2 className="truncate text-sm font-extrabold">
@@ -208,7 +208,7 @@ export default async function SearchPage({
                       href={`/u/${collection.username}`}
                       className={cn(
                         buttonVariants({ variant: "outline", size: "sm" }),
-                        "bg-card",
+                        "col-span-2 min-h-11 w-full bg-card text-sm sm:col-span-1 sm:min-h-0 sm:w-auto sm:text-xs",
                       )}
                     >
                       Xem collection <ArrowUpRight className="size-3.5" />
@@ -218,28 +218,28 @@ export default async function SearchPage({
                     {collection.cards.map((card, index) => (
                       <div
                         key={`${card.id}-${card.finish}-${card.condition}-${index}`}
-                        className="flex min-w-0 gap-3 bg-card p-3"
+                        className="flex min-w-0 gap-3 bg-card p-3 sm:min-h-30"
                       >
                         <img
                           src={card.imageUrl}
                           alt={card.name}
                           loading="lazy"
                           decoding="async"
-                          className="h-24 w-[68px] shrink-0 rounded-sm border bg-secondary object-cover"
+                          className="h-28 w-[80px] shrink-0 rounded-sm border bg-secondary object-cover sm:h-24 sm:w-[68px]"
                         />
                         <div className="flex min-w-0 flex-1 flex-col py-0.5">
-                          <h3 className="line-clamp-2 text-xs font-extrabold leading-4">
+                          <h3 className="line-clamp-2 text-base font-extrabold leading-5 sm:text-xs sm:leading-4">
                             {card.name}
                           </h3>
-                          <p className="mt-1 truncate text-[10px] text-muted-foreground">
+                          <p className="mt-1 truncate text-xs text-muted-foreground sm:text-[10px]">
                             {card.set} · {String(card.number).padStart(3, "0")}{" "}
                             · {card.rarity}
                           </p>
-                          <p className="mt-1 text-[10px] text-muted-foreground">
+                          <p className="mt-1 text-xs text-muted-foreground sm:text-[10px]">
                             {card.finish === "foil" ? "Foil" : "Non-foil"} ·{" "}
                             {card.condition} · SL {card.quantity}
                           </p>
-                          <strong className="mt-auto text-xs text-[#5f793f]">
+                          <strong className="mt-auto text-sm text-[#5f793f] sm:text-xs">
                             {card.minPrice > 0
                               ? formatCurrency(card.minPrice)
                               : "Liên hệ"}
