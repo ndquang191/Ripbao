@@ -15,7 +15,7 @@ export async function GET() {
   const sql = getDb();
   const rows = await sql`
     SELECT requests.id, requests.status, requests.created_at AS "createdAt",
-      requests.buyer_contact_phone AS "buyerContactPhone",
+      NULL::text AS "buyerContactPhone",
       requests.completed_at AS "completedAt", buyers.username AS buyer,
       buyers.facebook_url AS "buyerFacebookUrl", sellers.username AS seller,
       sellers.facebook_url AS "sellerFacebookUrl",
@@ -37,8 +37,7 @@ export async function GET() {
     LEFT JOIN trade_request_items AS items ON items.request_id = requests.id
     LEFT JOIN listings ON listings.id = items.listing_id
     LEFT JOIN cards ON cards.id = listings.card_id
-    WHERE (requests.buyer_id = ${user.id} AND requests.buyer_hidden_at IS NULL)
-      OR (requests.seller_id = ${user.id} AND requests.seller_hidden_at IS NULL)
+    WHERE requests.buyer_id = ${user.id} OR requests.seller_id = ${user.id}
     GROUP BY requests.id, buyers.id, sellers.id
     ORDER BY requests.created_at DESC
   `;
