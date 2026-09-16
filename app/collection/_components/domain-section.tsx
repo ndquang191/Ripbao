@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   domainColor,
+  defaultMin,
+  defaultMultiplier,
   editFor,
   finalPrice,
   totalQuantity,
@@ -51,7 +54,7 @@ export function DomainSection(props: {
           {props.cards.length} loại · {copies} bản
         </span>
       </header>
-      <div className="hidden grid-cols-[52px_minmax(170px,1fr)_130px_minmax(0,456px)] gap-2 border-b bg-secondary/45 px-3 py-2 text-[9px] font-bold uppercase text-muted-foreground md:grid">
+      <div className="hidden gap-4 border-b bg-secondary/45 px-3 py-2 text-[9px] font-bold uppercase text-muted-foreground md:grid md:grid-cols-[72px_minmax(160px,1fr)_90px_430px] xl:grid-cols-[72px_minmax(180px,320px)_160px_minmax(600px,1fr)]">
         <span>Ảnh</span>
         <SortButton
           label="Tên card"
@@ -60,7 +63,7 @@ export function DomainSection(props: {
           changeSort={props.changeSort}
         />
         <span>Set / Mã</span>
-        <div className="grid grid-cols-[64px_minmax(92px,112px)_minmax(100px,132px)_72px_minmax(76px,100px)] gap-2 px-2">
+        <div className="grid grid-cols-[48px_72px_minmax(80px,104px)_52px_minmax(60px,74px)] gap-2 px-2 xl:grid-cols-[70px_90px_minmax(130px,1fr)_70px_minmax(90px,1fr)] xl:gap-7">
           <span>Phiên bản</span>
           <SortButton label="Số lượng" sortKey="quantity" sort={props.sort} changeSort={props.changeSort} />
           <span>Giá Min</span>
@@ -120,16 +123,61 @@ function CardRow(props: {
   updateCard: (id: string, finish: Finish, edit: Partial<Edit>) => void;
 }) {
   const { card } = props;
-  const quantity = totalQuantity(props.draft, card.id);
+  const nonfoil = editFor(props.draft, card.id, "nonfoil");
+  const foil = editFor(props.draft, card.id, "foil");
+  const both = nonfoil.quantity > 0 && foil.quantity > 0;
+  const [singleFinish, setSingleFinish] = useState<Finish>(() =>
+    foil.quantity > 0 && nonfoil.quantity <= 0 ? "foil" : "nonfoil",
+  );
+  useEffect(() => {
+    if (!both) {
+      if (foil.quantity > 0) setSingleFinish("foil");
+      else if (nonfoil.quantity > 0) setSingleFinish("nonfoil");
+    }
+  }, [both, foil.quantity, nonfoil.quantity]);
+  const quantity = nonfoil.quantity + foil.quantity;
+  const setBoth = (enabled: boolean) => {
+    const other: Finish = singleFinish === "foil" ? "nonfoil" : "foil";
+    if (enabled) {
+      if (editFor(props.draft, card.id, singleFinish).quantity <= 0) {
+        const primary = editFor(props.draft, card.id, singleFinish);
+        props.updateCard(card.id, singleFinish, {
+          quantity: 1,
+          minPrice: props.draft[variantKey(card.id, singleFinish)]
+            ? primary.minPrice
+            : defaultMin(card.rarity),
+          tcgMultiplier: props.draft[variantKey(card.id, singleFinish)]
+            ? primary.tcgMultiplier
+            : defaultMultiplier(card.rarity),
+        });
+      }
+      const otherEdit = editFor(props.draft, card.id, other);
+      props.updateCard(card.id, other, {
+        quantity: Math.max(1, otherEdit.quantity),
+        minPrice: props.draft[variantKey(card.id, other)]
+          ? otherEdit.minPrice
+          : defaultMin(card.rarity),
+        tcgMultiplier: props.draft[variantKey(card.id, other)]
+          ? otherEdit.tcgMultiplier
+          : defaultMultiplier(card.rarity),
+      });
+    } else {
+      props.updateCard(card.id, other, { quantity: 0 });
+    }
+  };
   return (
     <div
       className={cn(
-        "grid gap-4 border-t p-3 first:border-t-0 md:grid-cols-[52px_minmax(170px,1fr)_130px_minmax(0,456px)] md:items-start md:gap-2",
+        "grid gap-3 border-t p-3 first:border-t-0 md:grid-cols-[72px_minmax(160px,1fr)_90px_430px] md:items-center md:gap-4 xl:grid-cols-[72px_minmax(180px,320px)_160px_minmax(600px,1fr)]",
         !quantity && "bg-destructive/5",
       )}
     >
       <div className="flex gap-3 md:contents">
-        <CardImage card={card} />
+        <CardImage
+          card={card}
+          className="h-28 w-20 border-0 bg-transparent md:h-24 md:w-[68px]"
+          imageClassName="object-contain"
+        />
         <div className="min-w-0 flex-1 self-center">
           <strong className="block text-base leading-5 font-bold md:truncate md:text-xs md:leading-4">
             {card.name}
@@ -137,9 +185,17 @@ function CardRow(props: {
           <p className="mt-1 text-xs text-muted-foreground md:hidden">
             {card.set} · #{card.collectorNumber} · {card.rarity}
           </p>
-          <p className="mt-1 text-[10px] font-bold text-muted-foreground">
-            Thường và Foil được quản lý riêng
-          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <label className="flex cursor-pointer items-center gap-1.5 text-[10px] font-bold">
+              <input
+                type="checkbox"
+                checked={both}
+                onChange={(event) => setBoth(event.target.checked)}
+                className="size-3.5 accent-primary"
+              />
+              Có cả Foil &amp; Thường
+            </label>
+          </div>
           {!quantity && (
             <span className="mt-1 inline-block rounded-sm bg-destructive/10 px-1.5 py-.5 text-[9px] font-bold text-destructive">
               {Boolean(
@@ -157,8 +213,8 @@ function CardRow(props: {
         <span className="text-muted-foreground">#{card.collectorNumber}</span>
       </div>
       <div className="space-y-2">
-        <VariantRow card={card} finish="nonfoil" edit={editFor(props.draft, card.id, "nonfoil")} updateCard={props.updateCard} />
-        <VariantRow card={card} finish="foil" edit={editFor(props.draft, card.id, "foil")} updateCard={props.updateCard} />
+        {nonfoil.quantity > 0 && <VariantRow card={card} finish="nonfoil" edit={nonfoil} showFinish={both} updateCard={props.updateCard} />}
+        {foil.quantity > 0 && <VariantRow card={card} finish="foil" edit={foil} showFinish={both} updateCard={props.updateCard} />}
       </div>
     </div>
   );
@@ -168,6 +224,7 @@ function VariantRow(props: {
   card: CardData;
   finish: Finish;
   edit: Edit;
+  showFinish: boolean;
   updateCard: (id: string, finish: Finish, edit: Partial<Edit>) => void;
 }) {
   const label = props.finish === "foil" ? "Foil" : "Thường";
@@ -175,13 +232,17 @@ function VariantRow(props: {
     props.updateCard(props.card.id, props.finish, patch);
 
   return (
-    <div className="grid grid-cols-[64px_minmax(92px,112px)_minmax(100px,132px)_72px_minmax(76px,100px)] items-center gap-2 rounded-sm border bg-background/60 p-2 max-md:grid-cols-2">
+    <div className="grid grid-cols-[48px_72px_minmax(80px,104px)_52px_minmax(60px,74px)] items-center gap-2 rounded-sm border bg-background/60 p-2 max-md:grid-cols-2 xl:grid-cols-[70px_90px_minmax(130px,1fr)_70px_minmax(90px,1fr)] xl:gap-7">
       <span className={cn("text-[10px] font-extrabold", props.finish === "foil" && "text-[#826a19]")}>
-        {label}
+        {props.showFinish ? label : null}
       </span>
       <label className="text-[9px] font-bold text-muted-foreground max-md:text-xs">
         <span className="md:hidden">Số lượng</span>
-        <QuantityInput value={props.edit.quantity} name={`${props.card.name} ${label}`} set={(quantity) => set({ quantity })} />
+        <QuantityInput
+          value={props.edit.quantity}
+          name={`${props.card.name} ${label}`}
+          set={(quantity) => set({ quantity })}
+        />
       </label>
       <label className="text-[9px] font-bold text-muted-foreground max-md:text-xs">
         <span className="md:hidden">Giá Min</span>

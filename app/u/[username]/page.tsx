@@ -103,12 +103,17 @@ export async function generateMetadata({
 
 function FacebookIcon() {
   return (
-    <span
+    <svg
       aria-hidden="true"
-      className="grid size-4 place-items-center rounded-full bg-primary font-sans text-[11px] font-black leading-none text-primary-foreground"
+      viewBox="0 0 24 24"
+      className="size-5 text-primary"
     >
-      f
-    </span>
+      <circle cx="12" cy="12" r="12" fill="currentColor" />
+      <path
+        fill="white"
+        d="M13.55 21v-8.2h2.75l.41-3.2h-3.16V7.56c0-.93.26-1.56 1.59-1.56h1.7V3.14A22.8 22.8 0 0 0 14.36 3c-2.45 0-4.13 1.5-4.13 4.24V9.6H7.46v3.2h2.77V21h3.32Z"
+      />
+    </svg>
   );
 }
 
@@ -159,7 +164,7 @@ export default async function SellerPage({
                   rel="noreferrer"
                   className={cn(
                     buttonVariants({ variant: "outline", size: "icon" }),
-                    "size-11 shrink-0 sm:size-8",
+                    "size-11 shrink-0 border-primary/30 bg-card hover:border-primary/55 hover:bg-secondary sm:size-8",
                   )}
                   aria-label={`Mở Facebook của ${displayName}`}
                   title="Mở Facebook"

@@ -36,6 +36,16 @@ export type CartItem = {
   quantity: number;
 };
 
+export function cartItemKey(
+  seller: string,
+  cardId: string,
+  finish: string,
+  condition: string,
+) {
+  const finishKey = finish === "Foil" || finish === "foil" ? "foil" : "nonfoil";
+  return `${seller}:${cardId}:${finishKey}:${condition}`;
+}
+
 type CartContextValue = {
   items: CartItem[];
   count: number;
@@ -90,7 +100,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         };
         setItems(
           (data.items ?? []).map((item) => ({
-            key: `${item.seller}:${item.cardId}`,
+            key: cartItemKey(
+              item.seller,
+              item.cardId,
+              item.finish,
+              item.condition,
+            ),
             cardId: item.cardId,
             seller: item.seller,
             sellerDisplayName: item.sellerDisplayName,
@@ -116,7 +131,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {
         try {
           const saved = window.localStorage.getItem(storageKey);
-          if (saved) setItems(JSON.parse(saved) as CartItem[]);
+          if (saved) {
+            const stored = JSON.parse(saved) as CartItem[];
+            setItems(
+              stored.map((item) => ({
+                ...item,
+                key: cartItemKey(
+                  item.seller,
+                  item.cardId,
+                  item.finish,
+                  item.condition,
+                ),
+              })),
+            );
+          }
         } catch {
           window.localStorage.removeItem(storageKey);
         }
@@ -183,7 +211,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       },
       addItem: (item) =>
         setItems((current) => {
-          const key = `${item.seller}:${item.cardId}`;
+          const key = cartItemKey(
+            item.seller,
+            item.cardId,
+            item.finish,
+            item.condition,
+          );
           const existing = current.find((entry) => entry.key === key);
           if (existing)
             return current.map((entry) =>

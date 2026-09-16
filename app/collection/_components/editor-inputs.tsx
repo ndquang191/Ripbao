@@ -52,12 +52,12 @@ export function QuantityInput({
   return (
     <div className="mt-1 flex w-fit items-center overflow-hidden rounded-sm border bg-background md:mt-0">
       <button
-        className="grid size-8 place-items-center hover:bg-secondary disabled:opacity-30"
+        className="grid size-6 place-items-center hover:bg-secondary disabled:opacity-30"
         disabled={value <= 0}
         onClick={() => set(Math.max(0, value - 1))}
         aria-label={`Giảm số lượng ${name}`}
       >
-        <Minus className="size-3" />
+        <Minus className="size-2.5" />
       </button>
       <input
         type="number"
@@ -65,15 +65,15 @@ export function QuantityInput({
         value={value}
         onFocus={(event) => event.currentTarget.select()}
         onChange={(event) => set(Math.max(0, event.target.valueAsNumber || 0))}
-        className="h-8 w-10 border-x bg-background text-center text-xs font-black outline-none"
+        className="h-6 w-8 border-x bg-background text-center text-[10px] font-black outline-none"
         aria-label={`Số lượng ${name}`}
       />
       <button
-        className="grid size-8 place-items-center hover:bg-secondary"
+        className="grid size-6 place-items-center hover:bg-secondary"
         onClick={() => set(value + 1)}
         aria-label={`Tăng số lượng ${name}`}
       >
-        <Plus className="size-3" />
+        <Plus className="size-2.5" />
       </button>
     </div>
   );
@@ -117,7 +117,7 @@ export function MoneyInput({
         value={input.inputValue}
         onChange={(event) => input.change(event.target.value)}
         onBlur={input.commit}
-        className="h-8 w-full rounded-sm border bg-background pl-6 pr-2 text-[10px] font-bold"
+        className="h-7 w-full rounded-sm border bg-background pl-6 pr-2 text-[10px] font-bold"
       />
     </div>
   );
@@ -142,7 +142,7 @@ export function MultiplierInput({
       onChange={(event) => input.change(event.target.value)}
       onBlur={input.commit}
       className={cn(
-        "h-8 w-full rounded-sm border bg-background px-2 text-center text-[10px] font-bold",
+        "h-7 w-full rounded-sm border bg-background px-2 text-center text-[10px] font-bold",
         className,
       )}
     />
@@ -152,15 +152,18 @@ export function MultiplierInput({
 export function CardImage({
   card,
   className,
+  imageClassName,
 }: {
   card: CardData;
   className?: string;
+  imageClassName?: string;
 }) {
   return (
     <CardImagePreview
       src={card.imageUrl}
       alt={card.name}
       className={cn("h-14 w-10", className)}
+      imageClassName={imageClassName}
     />
   );
 }
@@ -173,7 +176,7 @@ export function FinishInput({ value, name, set }: {
   set: (value: Finish) => void;
 }) {
   return (
-    <div className="mt-2 flex w-fit items-center gap-2 text-[10px] text-muted-foreground">
+    <div className="flex w-fit items-center gap-2 text-[10px] text-muted-foreground">
       <span>Loại</span>
       <FilterDropdown
         label="Foil"

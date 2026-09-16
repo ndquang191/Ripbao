@@ -175,11 +175,19 @@
   animation: card-title-scroll 1.8s ease-in-out 0.25s alternate infinite;
 }
 
+.card-title-text-auto {
+  animation: card-title-scroll 3.5s ease-in-out 0.75s alternate infinite;
+}
+
 .page-loading-bar {
   animation: page-loading-slide 1.15s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .card-title-text-auto {
+    animation: none;
+  }
+
   .page-loading-bar {
     animation: none;
     transform: translateX(50%);

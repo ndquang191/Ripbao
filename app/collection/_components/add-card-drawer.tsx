@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, X } from "lucide-react";
 import { DomainFilter, FilterDropdown } from "@/components/domain-filter";
 import { Button } from "@/components/ui/button";
@@ -130,47 +130,13 @@ export function AddCardDrawer(props: {
         >
           <div className="grid gap-2 sm:grid-cols-2">
             {visible.map((card) => {
-              const quantity = totalQuantity(props.draft, card.id);
               return (
-                <article
+                <DrawerCard
                   key={card.id}
-                  className="flex gap-3 rounded-sm border bg-card p-3 sm:p-2"
-                >
-                  <CardImage card={card} className="h-[88px] w-16" />
-                  <div className="min-w-0 flex-1">
-                    <strong className="line-clamp-2 text-sm leading-5 sm:block sm:truncate sm:text-[11px] sm:leading-normal">
-                      {card.name}
-                    </strong>
-                    <p className="mt-1 text-xs text-muted-foreground sm:text-[9px]">
-                      {card.set} · #{card.collectorNumber} · {card.rarity}
-                    </p>
-                    <p
-                      className="truncate text-xs sm:text-[9px]"
-                      style={{ color: domainColor(card.domains[0]) }}
-                    >
-                      {card.domains.join(" · ") || "Không có Domain"}
-                    </p>
-                    <div className="mt-2 space-y-1.5">
-                      {(["nonfoil", "foil"] as const).map((finish) => (
-                        <DrawerVariant
-                          key={finish}
-                          card={card}
-                          finish={finish}
-                          edit={editFor(props.draft, card.id, finish)}
-                          exists={Boolean(props.draft[variantKey(card.id, finish)])}
-                          updateCard={props.updateCard}
-                        />
-                      ))}
-                    </div>
-                    <div className="mt-2 flex items-center justify-end">
-                      {quantity > 0 && (
-                        <span className="rounded-sm bg-accent/40 px-1.5 py-1 text-[9px] font-bold">
-                          Đã thêm {quantity}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </article>
+                  card={card}
+                  draft={props.draft}
+                  updateCard={props.updateCard}
+                />
               );
             })}
           </div>
@@ -214,17 +180,92 @@ export function AddCardDrawer(props: {
   );
 }
 
+function DrawerCard(props: {
+  card: CardData;
+  draft: CollectionDraft;
+  updateCard: (id: string, finish: Finish, edit: Partial<Edit>) => void;
+}) {
+  const { card } = props;
+  const nonfoil = editFor(props.draft, card.id, "nonfoil");
+  const foil = editFor(props.draft, card.id, "foil");
+  const both = nonfoil.quantity > 0 && foil.quantity > 0;
+  const [singleFinish, setSingleFinish] = useState<Finish>(() =>
+    foil.quantity > 0 && nonfoil.quantity <= 0 ? "foil" : "nonfoil",
+  );
+  useEffect(() => {
+    if (!both) {
+      if (foil.quantity > 0) setSingleFinish("foil");
+      else if (nonfoil.quantity > 0) setSingleFinish("nonfoil");
+    }
+  }, [both, foil.quantity, nonfoil.quantity]);
+
+  const setVariant = (finish: Finish, quantity: number) => {
+    const edit = editFor(props.draft, card.id, finish);
+    props.updateCard(card.id, finish, {
+      quantity,
+      minPrice: props.draft[variantKey(card.id, finish)]
+        ? edit.minPrice
+        : defaultMin(card.rarity),
+      tcgMultiplier: props.draft[variantKey(card.id, finish)]
+        ? edit.tcgMultiplier
+        : defaultMultiplier(card.rarity),
+    });
+  };
+  const setBoth = (enabled: boolean) => {
+    const other: Finish = singleFinish === "foil" ? "nonfoil" : "foil";
+    if (enabled && editFor(props.draft, card.id, singleFinish).quantity <= 0) {
+      setVariant(singleFinish, 1);
+    }
+    setVariant(other, enabled ? Math.max(1, editFor(props.draft, card.id, other).quantity) : 0);
+  };
+  const quantity = nonfoil.quantity + foil.quantity;
+
+  return (
+    <article className="flex gap-3 rounded-sm border bg-card p-3 sm:p-2">
+      <CardImage
+        card={card}
+        className="h-32 w-[92px] border-0 bg-transparent"
+        imageClassName="object-contain"
+      />
+      <div className="min-w-0 flex-1">
+        <strong className="line-clamp-2 text-sm leading-5 sm:block sm:truncate sm:text-[11px] sm:leading-normal">
+          {card.name}
+        </strong>
+        <p className="mt-1 text-xs text-muted-foreground sm:text-[9px]">
+          {card.set} · #{card.collectorNumber} · {card.rarity}
+        </p>
+        <p className="truncate text-xs sm:text-[9px]" style={{ color: domainColor(card.domains[0]) }}>
+          {card.domains.join(" · ") || "Không có Domain"}
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <label className="flex cursor-pointer items-center gap-1.5 text-[10px] font-bold">
+            <input type="checkbox" checked={both} onChange={(event) => setBoth(event.target.checked)} className="size-3.5 accent-primary" />
+            Có cả Foil &amp; Thường
+          </label>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {nonfoil.quantity > 0 && <DrawerVariant card={card} finish="nonfoil" edit={nonfoil} showFinish={both} exists updateCard={props.updateCard} />}
+          {foil.quantity > 0 && <DrawerVariant card={card} finish="foil" edit={foil} showFinish={both} exists updateCard={props.updateCard} />}
+          {!quantity && <DrawerVariant card={card} finish={singleFinish} edit={editFor(props.draft, card.id, singleFinish)} showFinish={false} exists={Boolean(props.draft[variantKey(card.id, singleFinish)])} updateCard={props.updateCard} />}
+        </div>
+        {quantity > 0 && <div className="mt-2 text-right"><span className="rounded-sm bg-accent/40 px-1.5 py-1 text-[9px] font-bold">Đã thêm {quantity}</span></div>}
+      </div>
+    </article>
+  );
+}
+
 function DrawerVariant(props: {
   card: CardData;
   finish: Finish;
   edit: Edit;
+  showFinish: boolean;
   exists: boolean;
   updateCard: (id: string, finish: Finish, edit: Partial<Edit>) => void;
 }) {
   const label = props.finish === "foil" ? "Foil" : "Thường";
   return (
-    <div className="flex items-center justify-between gap-2 rounded-sm border bg-background/60 px-2 py-1 max-sm:[&_button]:size-11 max-sm:[&_input]:h-11">
-      <span className="text-[10px] font-bold">{label}</span>
+    <div className="flex items-center justify-between gap-2 rounded-sm border bg-background/60 px-2 py-1">
+      {props.showFinish && <span className="text-[10px] font-bold">{label}</span>}
       <QuantityInput
         value={props.edit.quantity}
         name={`${props.card.name} ${label}`}
