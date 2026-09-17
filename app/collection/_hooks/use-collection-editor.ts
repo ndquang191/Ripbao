@@ -8,6 +8,7 @@ import {
   cardIdFromVariantKey,
   defaultMin,
   defaultMultiplier,
+  defaultFinish,
   domainRank,
   editOf,
   FINISHES,
@@ -73,16 +74,19 @@ export function useCollectionEditor() {
       .then((response) => (response.ok ? response.json() : Promise.reject()))
       .then((data: { items?: ApiListing[]; user?: { username: string } }) => {
         const items = data.items ?? [];
-        const baseline = Object.fromEntries(
-          items.map((item) => [
-            variantKey(item.cardId, item.finish ?? "nonfoil"),
-            {
-              quantity: item.quantity,
-              minPrice: Number(item.minPrice),
-              tcgMultiplier: Number(item.tcgMultiplier),
-            },
-          ]),
-        );
+        const baseline = items.reduce<CollectionDraft>((result, item) => {
+          const finish = defaultFinish(item.rarity) === "foil"
+            ? "foil"
+            : item.finish ?? "nonfoil";
+          const key = variantKey(item.cardId, finish);
+          const existing = result[key];
+          result[key] = {
+            quantity: (existing?.quantity ?? 0) + item.quantity,
+            minPrice: Math.max(existing?.minPrice ?? 0, Number(item.minPrice)),
+            tcgMultiplier: Math.max(existing?.tcgMultiplier ?? 0, Number(item.tcgMultiplier)),
+          };
+          return result;
+        }, {});
         setUsername(data.user?.username ?? "");
         setSaved(baseline);
         setDraft(baseline);

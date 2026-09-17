@@ -37,6 +37,16 @@ export function editOf(x?: Partial<Edit>): Edit {
 
 export const FINISHES: Finish[] = ["nonfoil", "foil"];
 
+const DUAL_FINISH_RARITIES = new Set(["common", "uncommon"]);
+
+export function supportsDualFinish(rarity: string) {
+  return DUAL_FINISH_RARITIES.has(rarity.toLowerCase());
+}
+
+export function defaultFinish(rarity: string): Finish {
+  return supportsDualFinish(rarity) ? "nonfoil" : "foil";
+}
+
 export function variantKey(cardId: string, finish: Finish) {
   return `${finish}:${cardId}`;
 }

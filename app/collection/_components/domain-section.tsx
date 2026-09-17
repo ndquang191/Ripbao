@@ -9,6 +9,8 @@ import {
   defaultMultiplier,
   editFor,
   finalPrice,
+  defaultFinish,
+  supportsDualFinish,
   totalQuantity,
   variantKey,
 } from "../_lib/collection-utils";
@@ -125,9 +127,12 @@ function CardRow(props: {
   const { card } = props;
   const nonfoil = editFor(props.draft, card.id, "nonfoil");
   const foil = editFor(props.draft, card.id, "foil");
-  const both = nonfoil.quantity > 0 && foil.quantity > 0;
+  const canHaveBoth = supportsDualFinish(card.rarity);
+  const both = canHaveBoth && nonfoil.quantity > 0 && foil.quantity > 0;
   const [singleFinish, setSingleFinish] = useState<Finish>(() =>
-    foil.quantity > 0 && nonfoil.quantity <= 0 ? "foil" : "nonfoil",
+    canHaveBoth
+      ? foil.quantity > 0 && nonfoil.quantity <= 0 ? "foil" : "nonfoil"
+      : defaultFinish(card.rarity),
   );
   useEffect(() => {
     if (!both) {
@@ -185,7 +190,7 @@ function CardRow(props: {
           <p className="mt-1 text-xs text-muted-foreground md:hidden">
             {card.set} · #{card.collectorNumber} · {card.rarity}
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+          {canHaveBoth && <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
             <label className="flex cursor-pointer items-center gap-1.5 text-[10px] font-bold">
               <input
                 type="checkbox"
@@ -195,7 +200,7 @@ function CardRow(props: {
               />
               Có cả Foil &amp; Thường
             </label>
-          </div>
+          </div>}
           {!quantity && (
             <span className="mt-1 inline-block rounded-sm bg-destructive/10 px-1.5 py-.5 text-[9px] font-bold text-destructive">
               {Boolean(
@@ -213,8 +218,8 @@ function CardRow(props: {
         <span className="text-muted-foreground">#{card.collectorNumber}</span>
       </div>
       <div className="space-y-2">
-        {nonfoil.quantity > 0 && <VariantRow card={card} finish="nonfoil" edit={nonfoil} showFinish={both} updateCard={props.updateCard} />}
-        {foil.quantity > 0 && <VariantRow card={card} finish="foil" edit={foil} showFinish={both} updateCard={props.updateCard} />}
+        {canHaveBoth && nonfoil.quantity > 0 && <VariantRow card={card} finish="nonfoil" edit={nonfoil} showFinish={both} updateCard={props.updateCard} />}
+        {foil.quantity > 0 && <VariantRow card={card} finish="foil" edit={foil} showFinish={both || !canHaveBoth} updateCard={props.updateCard} />}
       </div>
     </div>
   );

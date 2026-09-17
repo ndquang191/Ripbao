@@ -62,9 +62,20 @@ export async function PUT(request: Request) {
     tx`UPDATE listings SET is_active = false, updated_at = now() WHERE user_id = ${user.id}`,
     tx`
       INSERT INTO listings (user_id, card_id, finish, quantity, min_price_vnd, tcg_multiplier, is_active)
-      SELECT ${user.id}, item.card_id, item.finish, item.quantity, item.min_price_vnd, item.tcg_multiplier, true
-      FROM jsonb_to_recordset(${payload}::jsonb) AS item(card_id text, finish text, quantity integer, min_price_vnd bigint, tcg_multiplier numeric)
-      JOIN cards ON cards.id = item.card_id AND cards.is_active
+      SELECT ${user.id}, normalized.card_id, normalized.finish,
+        sum(normalized.quantity)::integer, max(normalized.min_price_vnd),
+        max(normalized.tcg_multiplier), true
+      FROM (
+        SELECT item.card_id,
+          CASE
+            WHEN lower(cards.rarity) IN ('common', 'uncommon') THEN item.finish
+            ELSE 'foil'
+          END AS finish,
+          item.quantity, item.min_price_vnd, item.tcg_multiplier
+        FROM jsonb_to_recordset(${payload}::jsonb) AS item(card_id text, finish text, quantity integer, min_price_vnd bigint, tcg_multiplier numeric)
+        JOIN cards ON cards.id = item.card_id AND cards.is_active
+      ) AS normalized
+      GROUP BY normalized.card_id, normalized.finish
       ON CONFLICT (user_id, card_id, finish, condition) DO UPDATE SET
         quantity = EXCLUDED.quantity,
         min_price_vnd = EXCLUDED.min_price_vnd,

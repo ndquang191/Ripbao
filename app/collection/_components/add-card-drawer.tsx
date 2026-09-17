@@ -9,9 +9,11 @@ import { useModalDialog } from "../_hooks/use-modal-dialog";
 import {
   defaultMin,
   defaultMultiplier,
+  defaultFinish,
   domainColor,
   editFor,
   totalQuantity,
+  supportsDualFinish,
   uniqueCards,
   variantKey,
 } from "../_lib/collection-utils";
@@ -188,9 +190,12 @@ function DrawerCard(props: {
   const { card } = props;
   const nonfoil = editFor(props.draft, card.id, "nonfoil");
   const foil = editFor(props.draft, card.id, "foil");
-  const both = nonfoil.quantity > 0 && foil.quantity > 0;
+  const canHaveBoth = supportsDualFinish(card.rarity);
+  const both = canHaveBoth && nonfoil.quantity > 0 && foil.quantity > 0;
   const [singleFinish, setSingleFinish] = useState<Finish>(() =>
-    foil.quantity > 0 && nonfoil.quantity <= 0 ? "foil" : "nonfoil",
+    canHaveBoth
+      ? foil.quantity > 0 && nonfoil.quantity <= 0 ? "foil" : "nonfoil"
+      : defaultFinish(card.rarity),
   );
   useEffect(() => {
     if (!both) {
@@ -237,16 +242,16 @@ function DrawerCard(props: {
         <p className="truncate text-xs sm:text-[9px]" style={{ color: domainColor(card.domains[0]) }}>
           {card.domains.join(" · ") || "Không có Domain"}
         </p>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        {canHaveBoth && <div className="mt-2 flex flex-wrap items-center gap-2">
           <label className="flex cursor-pointer items-center gap-1.5 text-[10px] font-bold">
             <input type="checkbox" checked={both} onChange={(event) => setBoth(event.target.checked)} className="size-3.5 accent-primary" />
             Có cả Foil &amp; Thường
           </label>
-        </div>
+        </div>}
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {nonfoil.quantity > 0 && <DrawerVariant card={card} finish="nonfoil" edit={nonfoil} showFinish={both} exists updateCard={props.updateCard} />}
-          {foil.quantity > 0 && <DrawerVariant card={card} finish="foil" edit={foil} showFinish={both} exists updateCard={props.updateCard} />}
-          {!quantity && <DrawerVariant card={card} finish={singleFinish} edit={editFor(props.draft, card.id, singleFinish)} showFinish={false} exists={Boolean(props.draft[variantKey(card.id, singleFinish)])} updateCard={props.updateCard} />}
+          {canHaveBoth && nonfoil.quantity > 0 && <DrawerVariant card={card} finish="nonfoil" edit={nonfoil} showFinish={both} exists updateCard={props.updateCard} />}
+          {foil.quantity > 0 && <DrawerVariant card={card} finish="foil" edit={foil} showFinish={both || !canHaveBoth} exists updateCard={props.updateCard} />}
+          {!quantity && <DrawerVariant card={card} finish={singleFinish} edit={editFor(props.draft, card.id, singleFinish)} showFinish={!canHaveBoth} exists={Boolean(props.draft[variantKey(card.id, singleFinish)])} updateCard={props.updateCard} />}
         </div>
         {quantity > 0 && <div className="mt-2 text-right"><span className="rounded-sm bg-accent/40 px-1.5 py-1 text-[9px] font-bold">Đã thêm {quantity}</span></div>}
       </div>

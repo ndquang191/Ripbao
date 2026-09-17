@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import {
   cardIdFromVariantKey,
+  defaultFinish,
   editFor,
   sameEdits,
   totalQuantity,
+  supportsDualFinish,
   variantKey,
 } from "./collection-utils";
 import { type CollectionDraft } from "./models";
@@ -22,6 +24,22 @@ const draft: CollectionDraft = {
 };
 
 describe("collection variants", () => {
+  test("only common and uncommon support both finishes", () => {
+    expect(supportsDualFinish("Common")).toBe(true);
+    expect(supportsDualFinish("Uncommon")).toBe(true);
+    expect(supportsDualFinish("Rare")).toBe(false);
+    expect(supportsDualFinish("Epic")).toBe(false);
+    expect(supportsDualFinish("Overnumbered")).toBe(false);
+  });
+
+  test("higher rarities default to foil", () => {
+    expect(defaultFinish("Common")).toBe("nonfoil");
+    expect(defaultFinish("Uncommon")).toBe("nonfoil");
+    expect(defaultFinish("Rare")).toBe("foil");
+    expect(defaultFinish("Epic")).toBe("foil");
+    expect(defaultFinish("Overnumbered")).toBe("foil");
+  });
+
   test("keeps foil and nonfoil quantities and prices separate", () => {
     expect(totalQuantity(draft, "stupefy")).toBe(3);
     expect(editFor(draft, "stupefy", "nonfoil").quantity).toBe(2);
