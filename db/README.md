@@ -14,6 +14,8 @@ Add schema changes as numbered SQL files in this directory:
 009_add_trade_contact_phone.sql
 010_add_trade_visibility.sql
 011_add_request_rate_limits.sql
+012_add_card_market_prices.sql
+013_use_tcg_thousands_multiplier.sql
 ```
 
 Run all pending migrations with:

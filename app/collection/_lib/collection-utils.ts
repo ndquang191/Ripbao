@@ -1,5 +1,9 @@
 import { currencyConfig, formatCurrency } from "@/lib/currency";
-import { RIFTBOUND_DOMAIN_COLORS } from "@/lib/riftbound-constants";
+import {
+  RIFTBOUND_AUTO_FOIL_RARITIES,
+  RIFTBOUND_DOMAIN_COLORS,
+  RIFTBOUND_DUAL_FINISH_RARITIES,
+} from "@/lib/riftbound-constants";
 import { DEFAULT_TCG_MULTIPLIERS, DOMAIN_ORDER } from "./constants";
 import {
   type ApiListing,
@@ -23,7 +27,14 @@ export function fromListing(x: ApiListing): CardData {
     domains: x.domains ?? [],
     supertype: x.supertype,
     imageUrl: x.imageUrl,
-    tcgPrice: x.tcgPrice,
+    tcgPrices: x.marketPriceUsd != null && x.priceSourceUpdatedAt
+      ? {
+          [x.finish]: {
+            marketPriceUsd: Number(x.marketPriceUsd),
+            sourceUpdatedAt: x.priceSourceUpdatedAt,
+          },
+        }
+      : {},
   };
 }
 
@@ -31,20 +42,31 @@ export function editOf(x?: Partial<Edit>): Edit {
   return {
     quantity: x?.quantity ?? 0,
     minPrice: Number(x?.minPrice) || 0,
-    tcgMultiplier: Number(x?.tcgMultiplier) || 0.9,
+    tcgMultiplier: Number(x?.tcgMultiplier) || 25,
   };
 }
 
 export const FINISHES: Finish[] = ["nonfoil", "foil"];
 
-const DUAL_FINISH_RARITIES = new Set(["common", "uncommon"]);
+const DUAL_FINISH_RARITIES = new Set(
+  RIFTBOUND_DUAL_FINISH_RARITIES.map((rarity) => rarity.toLowerCase()),
+);
+const AUTO_FOIL_RARITIES = new Set(
+  RIFTBOUND_AUTO_FOIL_RARITIES.map((rarity) => rarity.toLowerCase()),
+);
 
 export function supportsDualFinish(rarity: string) {
   return DUAL_FINISH_RARITIES.has(rarity.toLowerCase());
 }
 
+export function isAutoFoilRarity(rarity: string) {
+  return AUTO_FOIL_RARITIES.has(rarity.toLowerCase());
+}
+
 export function defaultFinish(rarity: string): Finish {
-  return supportsDualFinish(rarity) ? "nonfoil" : "foil";
+  return isAutoFoilRarity(rarity) || !supportsDualFinish(rarity)
+    ? "foil"
+    : "nonfoil";
 }
 
 export function variantKey(cardId: string, finish: Finish) {
@@ -123,19 +145,28 @@ export function compareBySort(
 }
 
 function lowestFinalPrice(card: CardData, edits: Edit[]) {
-  const active = edits.filter((edit) => edit.quantity > 0);
+  const active = edits
+    .map((edit, index) => ({ edit, finish: FINISHES[index] }))
+    .filter(({ edit }) => edit.quantity > 0);
   return active.length
-    ? Math.min(...active.map((edit) => finalPriceValue(card, edit)))
+    ? Math.min(...active.map(({ edit, finish }) => finalPriceValue(card, finish, edit)))
     : 0;
 }
 
-export function finalPrice(card: CardData, edit: Edit) {
-  const value = finalPriceValue(card, edit);
+export function finalPrice(card: CardData, finish: Finish, edit: Edit) {
+  const value = finalPriceValue(card, finish, edit);
   return value > 0 ? formatCurrency(value) : "—";
 }
 
-export function finalPriceValue(card: CardData, edit: Edit) {
-  return Math.max(edit.minPrice, (card.tcgPrice ?? 0) * edit.tcgMultiplier);
+export function finalPriceValue(card: CardData, finish: Finish, edit: Edit) {
+  const marketPrice = card.tcgPrices[finish]?.marketPriceUsd;
+  if (marketPrice == null) return edit.minPrice;
+  const tcgPrice = Math.ceil(marketPrice * edit.tcgMultiplier) * 1_000;
+  return Math.max(edit.minPrice, tcgPrice);
+}
+
+export function isTcgPriceStale(sourceUpdatedAt: string, now = Date.now()) {
+  return now - new Date(sourceUpdatedAt).getTime() > 48 * 60 * 60 * 1_000;
 }
 
 export function defaultMin(rarity: string) {
@@ -143,5 +174,5 @@ export function defaultMin(rarity: string) {
 }
 
 export function defaultMultiplier(rarity: string) {
-  return DEFAULT_TCG_MULTIPLIERS[rarity.toLowerCase()] ?? 0.9;
+  return DEFAULT_TCG_MULTIPLIERS[rarity.toLowerCase()] ?? 25;
 }

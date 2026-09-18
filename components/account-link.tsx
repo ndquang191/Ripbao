@@ -14,6 +14,7 @@ import {
 import { CartLink } from "@/components/cart-link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ResponsiveDropdownPanel } from "@/components/ui/responsive-dropdown-panel";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast";
@@ -237,11 +238,11 @@ export function AccountLink({ className }: { className?: string }) {
             />
           </button>
           {accountMenuOpen && (
-            <div
-              className={cn(
-                "absolute right-0 top-full z-50 mt-2 w-44 rounded-md border bg-card p-1.5 shadow-xl",
-                "max-sm:w-52 max-sm:[&_[role=menuitem]]:min-h-11 max-sm:[&_[role=menuitem]]:text-sm",
-              )}
+            <ResponsiveDropdownPanel
+              title="Tài khoản"
+              subtitle={displayName}
+              onClose={() => setAccountMenuOpen(false)}
+              className="max-sm:[&_[role=menuitem]]:min-h-11 max-sm:[&_[role=menuitem]]:text-sm sm:top-full sm:right-0 sm:mt-2 sm:w-44 sm:p-1.5"
               role="menu"
             >
               <Link
@@ -275,7 +276,7 @@ export function AccountLink({ className }: { className?: string }) {
                 <LogOut className="size-3.5" />
                 Đăng xuất
               </button>
-            </div>
+            </ResponsiveDropdownPanel>
           )}
         </div>
       </div>

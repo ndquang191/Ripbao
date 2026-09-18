@@ -11,7 +11,8 @@
     "test": "bun test",
     "check": "bun run typecheck && bun run lint && bun run test",
     "db:migrate": "bun run scripts/db-migrate.ts",
-    "db:sync-cards": "bun run scripts/sync-riftbound.ts"
+    "db:sync-cards": "bun run scripts/sync-riftbound.ts",
+    "db:sync-prices": "bun run scripts/sync-justtcg-prices.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

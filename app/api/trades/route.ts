@@ -110,10 +110,10 @@ export async function POST(request: Request) {
       SELECT id FROM carts WHERE user_id = ${user.id} AND status = 'active'
     ), submitted AS (
       SELECT listings.id AS listing_id, LEAST(value.quantity, listings.quantity) AS quantity,
-        listings.min_price_vnd AS unit_price_vnd, listings.user_id AS seller_id
+        listings.effective_price_vnd AS unit_price_vnd, listings.user_id AS seller_id
       FROM jsonb_to_recordset(${payload}::jsonb) AS value(seller text, card_id text, finish text, condition text, quantity integer)
       JOIN users AS seller ON seller.username = value.seller
-      JOIN listings ON listings.user_id = seller.id AND listings.card_id = value.card_id
+      JOIN listing_prices AS listings ON listings.user_id = seller.id AND listings.card_id = value.card_id
         AND listings.finish = value.finish AND listings.condition = value.condition
       WHERE listings.is_active AND listings.quantity > 0 AND listings.user_id <> ${user.id}
     ), source AS (

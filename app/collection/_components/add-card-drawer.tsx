@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, X } from "lucide-react";
+import { Loader2, Trash2, Undo2, X } from "lucide-react";
 import { DomainFilter, FilterDropdown } from "@/components/domain-filter";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useCardCatalog } from "../_hooks/use-card-catalog";
 import { useModalDialog } from "../_hooks/use-modal-dialog";
 import {
@@ -51,10 +52,10 @@ export function AddCardDrawer(props: {
   const available = useMemo(
     () =>
       uniqueCards([
-        ...catalog.cards,
         ...added
           .map(([key]) => props.cardMap[key.slice(key.indexOf(":") + 1)])
           .filter(Boolean),
+        ...catalog.cards,
       ]),
     [added, catalog.cards, props.cardMap],
   );
@@ -191,18 +192,25 @@ function DrawerCard(props: {
   const nonfoil = editFor(props.draft, card.id, "nonfoil");
   const foil = editFor(props.draft, card.id, "foil");
   const canHaveBoth = supportsDualFinish(card.rarity);
-  const both = canHaveBoth && nonfoil.quantity > 0 && foil.quantity > 0;
+  const bothHaveQuantity = canHaveBoth && nonfoil.quantity > 0 && foil.quantity > 0;
+  const [showBoth, setShowBoth] = useState(bothHaveQuantity);
+  const [removedEdits, setRemovedEdits] = useState<{
+    nonfoil: Edit;
+    foil: Edit;
+    showBoth: boolean;
+  } | null>(null);
   const [singleFinish, setSingleFinish] = useState<Finish>(() =>
     canHaveBoth
       ? foil.quantity > 0 && nonfoil.quantity <= 0 ? "foil" : "nonfoil"
       : defaultFinish(card.rarity),
   );
   useEffect(() => {
-    if (!both) {
+    if (bothHaveQuantity) setShowBoth(true);
+    if (!showBoth) {
       if (foil.quantity > 0) setSingleFinish("foil");
       else if (nonfoil.quantity > 0) setSingleFinish("nonfoil");
     }
-  }, [both, foil.quantity, nonfoil.quantity]);
+  }, [bothHaveQuantity, foil.quantity, nonfoil.quantity, showBoth]);
 
   const setVariant = (finish: Finish, quantity: number) => {
     const edit = editFor(props.draft, card.id, finish);
@@ -217,13 +225,44 @@ function DrawerCard(props: {
     });
   };
   const setBoth = (enabled: boolean) => {
+    if (!enabled) {
+      const keep: Finish = nonfoil.quantity > 0
+        ? "nonfoil"
+        : foil.quantity > 0
+          ? "foil"
+          : singleFinish;
+      const remove: Finish = keep === "foil" ? "nonfoil" : "foil";
+      setSingleFinish(keep);
+      setShowBoth(false);
+      setVariant(remove, 0);
+      return;
+    }
+    setShowBoth(true);
     const other: Finish = singleFinish === "foil" ? "nonfoil" : "foil";
-    if (enabled && editFor(props.draft, card.id, singleFinish).quantity <= 0) {
+    if (editFor(props.draft, card.id, singleFinish).quantity <= 0) {
       setVariant(singleFinish, 1);
     }
-    setVariant(other, enabled ? Math.max(1, editFor(props.draft, card.id, other).quantity) : 0);
+    setVariant(other, Math.max(1, editFor(props.draft, card.id, other).quantity));
   };
   const quantity = nonfoil.quantity + foil.quantity;
+  const removeCard = () => {
+    setRemovedEdits({ nonfoil, foil, showBoth });
+    setShowBoth(false);
+    setVariant("nonfoil", 0);
+    setVariant("foil", 0);
+  };
+  const undoRemove = () => {
+    if (!removedEdits) return;
+    props.updateCard(card.id, "nonfoil", removedEdits.nonfoil);
+    props.updateCard(card.id, "foil", removedEdits.foil);
+    setShowBoth(removedEdits.showBoth);
+    setSingleFinish(
+      removedEdits.foil.quantity > 0 && removedEdits.nonfoil.quantity <= 0
+        ? "foil"
+        : "nonfoil",
+    );
+    setRemovedEdits(null);
+  };
 
   return (
     <article className="flex gap-3 rounded-sm border bg-card p-3 sm:p-2">
@@ -233,9 +272,27 @@ function DrawerCard(props: {
         imageClassName="object-contain"
       />
       <div className="min-w-0 flex-1">
-        <strong className="line-clamp-2 text-sm leading-5 sm:block sm:truncate sm:text-[11px] sm:leading-normal">
-          {card.name}
-        </strong>
+        <div className="flex items-start justify-between gap-2">
+          <strong className="line-clamp-2 min-w-0 flex-1 text-sm leading-5 sm:block sm:truncate sm:text-[11px] sm:leading-normal">
+            {card.name}
+          </strong>
+          {(quantity > 0 || removedEdits) && (
+            <button
+              type="button"
+              onClick={quantity > 0 ? removeCard : undoRemove}
+              className={cn(
+                "flex min-h-7 shrink-0 items-center gap-1 rounded-sm px-2 text-[10px] font-bold",
+                quantity > 0
+                  ? "text-destructive hover:bg-destructive/10"
+                  : "text-[#506b32] hover:bg-[#edf3e5]",
+              )}
+              aria-label={quantity > 0 ? `Xóa ${card.name} khỏi collection` : `Hoàn tác xóa ${card.name}`}
+            >
+              {quantity > 0 ? <Trash2 className="size-3" /> : <Undo2 className="size-3" />}
+              {quantity > 0 ? "Xóa" : "Hoàn tác"}
+            </button>
+          )}
+        </div>
         <p className="mt-1 text-xs text-muted-foreground sm:text-[9px]">
           {card.set} · #{card.collectorNumber} · {card.rarity}
         </p>
@@ -244,16 +301,25 @@ function DrawerCard(props: {
         </p>
         {canHaveBoth && <div className="mt-2 flex flex-wrap items-center gap-2">
           <label className="flex cursor-pointer items-center gap-1.5 text-[10px] font-bold">
-            <input type="checkbox" checked={both} onChange={(event) => setBoth(event.target.checked)} className="size-3.5 accent-primary" />
+            <input type="checkbox" checked={showBoth} onChange={(event) => setBoth(event.target.checked)} className="size-3.5 accent-primary" />
             Có cả Foil &amp; Thường
           </label>
         </div>}
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {canHaveBoth && nonfoil.quantity > 0 && <DrawerVariant card={card} finish="nonfoil" edit={nonfoil} showFinish={both} exists updateCard={props.updateCard} />}
-          {foil.quantity > 0 && <DrawerVariant card={card} finish="foil" edit={foil} showFinish={both || !canHaveBoth} exists updateCard={props.updateCard} />}
-          {!quantity && <DrawerVariant card={card} finish={singleFinish} edit={editFor(props.draft, card.id, singleFinish)} showFinish={!canHaveBoth} exists={Boolean(props.draft[variantKey(card.id, singleFinish)])} updateCard={props.updateCard} />}
+          {showBoth ? (
+            <>
+              <DrawerVariant card={card} finish="nonfoil" edit={nonfoil} showFinish minimumQuantity={foil.quantity > 0 ? 0 : 1} exists updateCard={props.updateCard} />
+              <DrawerVariant card={card} finish="foil" edit={foil} showFinish minimumQuantity={nonfoil.quantity > 0 ? 0 : 1} exists updateCard={props.updateCard} />
+            </>
+          ) : quantity > 0 ? (
+            <DrawerVariant card={card} finish={nonfoil.quantity > 0 ? "nonfoil" : "foil"} edit={nonfoil.quantity > 0 ? nonfoil : foil} showFinish exists updateCard={props.updateCard} />
+          ) : (
+            <DrawerVariant card={card} finish={singleFinish} edit={editFor(props.draft, card.id, singleFinish)} showFinish exists={Boolean(props.draft[variantKey(card.id, singleFinish)])} updateCard={props.updateCard} />
+          )}
         </div>
-        {quantity > 0 && <div className="mt-2 text-right"><span className="rounded-sm bg-accent/40 px-1.5 py-1 text-[9px] font-bold">Đã thêm {quantity}</span></div>}
+        {quantity > 0 && <div className="mt-2 text-right">
+          <span className="rounded-sm bg-accent/40 px-1.5 py-1 text-[9px] font-bold">Đã thêm {quantity}</span>
+        </div>}
       </div>
     </article>
   );
@@ -265,6 +331,7 @@ function DrawerVariant(props: {
   edit: Edit;
   showFinish: boolean;
   exists: boolean;
+  minimumQuantity?: number;
   updateCard: (id: string, finish: Finish, edit: Partial<Edit>) => void;
 }) {
   const label = props.finish === "foil" ? "Foil" : "Thường";
@@ -273,6 +340,7 @@ function DrawerVariant(props: {
       {props.showFinish && <span className="text-[10px] font-bold">{label}</span>}
       <QuantityInput
         value={props.edit.quantity}
+        min={props.minimumQuantity}
         name={`${props.card.name} ${label}`}
         set={(quantity) =>
           props.updateCard(props.card.id, props.finish, {

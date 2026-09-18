@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { currencyConfig } from "@/lib/currency";
 import { useDebounce } from "@/lib/use-debounce";
 import {
@@ -38,15 +38,18 @@ export function useCollectionEditor() {
   const [saved, setSaved] = useState<CollectionDraft>({});
   const [draft, setDraft] = useState<CollectionDraft>({});
   const [cardMap, setCardMap] = useState<Record<string, CardData>>({});
+  const requestedPriceKeys = useRef(new Set<string>());
   const [ready, setReady] = useState(false);
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query);
   const [filter, setFilter] = useState(["", "", "", ""]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">(
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "price-warning" | "error">(
     "idle",
   );
+  const [priceLookupWarning, setPriceLookupWarning] = useState(false);
+  const [pendingPriceLookups, setPendingPriceLookups] = useState(0);
   const [pricingOpen, setPricingOpen] = useState(false);
   const [domainSorts, setDomainSorts] = useState<Record<string, Sort>>({});
   const getSort = useCallback(
@@ -62,11 +65,12 @@ export function useCollectionEditor() {
     ),
   );
   const [multipliers, setMultipliers] = useState<Record<string, number>>({
-    Common: 0.8,
-    Uncommon: 0.85,
-    Rare: 0.9,
-    Epic: 0.95,
-    Legendary: 1,
+    Common: 25,
+    Uncommon: 25,
+    Rare: 25,
+    Epic: 25,
+    Legendary: 25,
+    Overnumbered: 25,
   });
 
   useEffect(() => {
@@ -90,14 +94,76 @@ export function useCollectionEditor() {
         setUsername(data.user?.username ?? "");
         setSaved(baseline);
         setDraft(baseline);
-        setCardMap(
-          Object.fromEntries(
-            items.map((item) => [item.cardId, fromListing(item)]),
-          ),
-        );
+        setCardMap(items.reduce<Record<string, CardData>>((result, item) => {
+          const incoming = fromListing(item);
+          const current = result[item.cardId];
+          result[item.cardId] = current
+            ? { ...current, tcgPrices: { ...current.tcgPrices, ...incoming.tcgPrices } }
+            : incoming;
+          return result;
+        }, {}));
       })
       .finally(() => setReady(true));
   }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    const missing = Object.entries(draft).flatMap(([key, edit]) => {
+      if (edit.quantity <= 0 || requestedPriceKeys.current.has(key)) return [];
+      const cardId = cardIdFromVariantKey(key);
+      const finish: Finish = key.startsWith("foil:") ? "foil" : "nonfoil";
+      const card = cardMap[cardId];
+      if (!card || card.tcgPrices[finish]) return [];
+      return [{ key, cardId, finish }];
+    });
+    if (!missing.length) return;
+    const timer = window.setTimeout(async () => {
+      missing.forEach((item) => requestedPriceKeys.current.add(item.key));
+      setPendingPriceLookups((count) => count + 1);
+      try {
+        const response = await fetch("/api/prices/lookup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: missing.map(({ cardId, finish }) => ({ cardId, finish })),
+          }),
+        });
+        if (!response.ok) throw new Error();
+        const data = (await response.json()) as {
+          priceUpdates?: Array<{
+            cardId: string;
+            finish: Finish;
+            marketPriceUsd: number;
+            sourceUpdatedAt: string;
+          }>;
+        };
+        setCardMap((current) => {
+          const next = { ...current };
+          data.priceUpdates?.forEach((price) => {
+            const card = next[price.cardId];
+            if (!card) return;
+            next[price.cardId] = {
+              ...card,
+              tcgPrices: {
+                ...card.tcgPrices,
+                [price.finish]: {
+                  marketPriceUsd: Number(price.marketPriceUsd),
+                  sourceUpdatedAt: price.sourceUpdatedAt,
+                },
+              },
+            };
+          });
+          return next;
+        });
+      } catch {
+        setPriceLookupWarning(true);
+        window.setTimeout(() => setPriceLookupWarning(false), 6_000);
+      } finally {
+        setPendingPriceLookups((count) => Math.max(0, count - 1));
+      }
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [cardMap, draft, ready]);
 
   const dirty = useMemo(() => !sameEdits(saved, draft), [saved, draft]);
   useUnsavedChanges(dirty);
@@ -166,10 +232,14 @@ export function useCollectionEditor() {
     }));
   }, []);
   const mergeCards = useCallback((incoming: CardData[]) => {
-    setCardMap((current) => ({
-      ...current,
-      ...Object.fromEntries(incoming.map((card) => [card.id, card])),
-    }));
+    setCardMap((current) => incoming.reduce((result, card) => ({
+      ...result,
+      [card.id]: {
+        ...result[card.id],
+        ...card,
+        tcgPrices: { ...result[card.id]?.tcgPrices, ...card.tcgPrices },
+      },
+    }), current));
   }, []);
   const changeSort = useCallback((domain: string, key: Sort["key"]) => {
     setDomainSorts((current) => {
@@ -227,7 +297,7 @@ export function useCollectionEditor() {
     setPricingOpen(false);
   }, [cards, minimums, multipliers]);
   const saveChanges = useCallback(async () => {
-    if (!dirty || saving) return;
+    if (!dirty || saving || pendingPriceLookups > 0) return;
     setSaving(true);
     setSaveStatus("idle");
     try {
@@ -243,19 +313,49 @@ export function useCollectionEditor() {
         }),
       });
       if (!response.ok) throw new Error();
+      const data = (await response.json()) as {
+        priceSync?: "synced" | "not-needed" | "failed";
+        priceUpdates?: Array<{
+          cardId: string;
+          finish: Finish;
+          marketPriceUsd: number;
+          sourceUpdatedAt: string;
+        }>;
+      };
+      if (data.priceUpdates?.length) {
+        setCardMap((current) => {
+          const next = { ...current };
+          data.priceUpdates?.forEach((price) => {
+            const card = next[price.cardId];
+            if (!card) return;
+            next[price.cardId] = {
+              ...card,
+              tcgPrices: {
+                ...card.tcgPrices,
+                [price.finish]: {
+                  marketPriceUsd: Number(price.marketPriceUsd),
+                  sourceUpdatedAt: price.sourceUpdatedAt,
+                },
+              },
+            };
+          });
+          return next;
+        });
+      }
       const clean = Object.fromEntries(
         Object.entries(draft).filter(([, edit]) => edit.quantity > 0),
       );
       setSaved(clean);
       setDraft(clean);
-      setSaveStatus("saved");
-      setTimeout(() => setSaveStatus("idle"), 1800);
+      const nextStatus = data.priceSync === "failed" ? "price-warning" : "saved";
+      setSaveStatus(nextStatus);
+      setTimeout(() => setSaveStatus("idle"), nextStatus === "price-warning" ? 6_000 : 1_800);
     } catch {
       setSaveStatus("error");
     } finally {
       setSaving(false);
     }
-  }, [dirty, draft, saving]);
+  }, [dirty, draft, pendingPriceLookups, saving]);
 
   return {
     username,
@@ -271,6 +371,8 @@ export function useCollectionEditor() {
     setDrawerOpen,
     saving,
     saveStatus,
+    priceLookupWarning,
+    priceLookupPending: pendingPriceLookups > 0,
     pricingOpen,
     setPricingOpen,
     getSort,

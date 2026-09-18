@@ -21,6 +21,12 @@ export function formatCurrency(value: number) {
   }).format(value);
 }
 
+export function formatCurrencyInput(value: number) {
+  return new Intl.NumberFormat(currencyConfig.locale, {
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 export function parseCurrency(value: string) {
   if (!value || value.toLocaleLowerCase("vi").includes("liên hệ")) return null;
 

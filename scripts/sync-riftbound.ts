@@ -88,7 +88,9 @@ const cards = [...uniqueCards.values()].map((card) => ({
   type: card.classification.type,
   supertype: card.classification.supertype,
   rarity: card.classification.rarity,
-  domains: card.classification.domain,
+  domains: card.classification.domain?.length
+    ? card.classification.domain
+    : ["Colorless"],
   image_url: card.media.image_url,
   source_updated_at: card.metadata.updated_on ?? null,
 }));
@@ -135,5 +137,7 @@ await sql.transaction((tx) => [
 
 console.log(
   `Synced ${cards.length} unique Riftbound cards ` +
-    `(${sourceCards.length} non-Battlefield records from ${firstPage.total} total)`,
+    `(${sourceCards.length} non-Battlefield records from ${firstPage.total} total) ` +
+    `across ${new Set(cards.map((card) => card.set_id)).size} sets and ` +
+    `${new Set(cards.flatMap((card) => card.domains)).size} domains`,
 );

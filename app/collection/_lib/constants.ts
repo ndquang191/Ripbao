@@ -1,4 +1,6 @@
-export const DOMAIN_ORDER = ["Body", "Calm", "Chaos", "Fury", "Mind", "Order"];
+import { RIFTBOUND_DOMAINS } from "@/lib/riftbound-constants";
+
+export const DOMAIN_ORDER: readonly string[] = RIFTBOUND_DOMAINS;
 
 export const QUICK_PRICING_RARITIES = [
   "Common",
@@ -17,9 +19,10 @@ export const QUICK_PRICING_RARITY_COLORS: Record<string, string> = {
 };
 
 export const DEFAULT_TCG_MULTIPLIERS: Record<string, number> = {
-  common: 0.8,
-  uncommon: 0.85,
-  rare: 0.9,
-  epic: 0.95,
-  legendary: 1,
+  common: 25,
+  uncommon: 25,
+  rare: 25,
+  epic: 25,
+  legendary: 25,
+  overnumbered: 25,
 };

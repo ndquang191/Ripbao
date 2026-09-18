@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { syncMissingListingPricesForUser } from "@/lib/justtcg-prices";
+import { RIFTBOUND_AUTO_FOIL_RARITIES } from "@/lib/riftbound-constants";
+
+export const maxDuration = 60;
 
 type ListingInput = {
   cardId?: string;
@@ -19,6 +23,8 @@ export async function GET() {
     SELECT listings.card_id AS "cardId", listings.quantity, listings.finish,
       listings.min_price_vnd AS "minPrice",
       listings.tcg_multiplier::float8 AS "tcgMultiplier",
+      listings.market_price_usd::float8 AS "marketPriceUsd",
+      listings.price_source_updated_at AS "priceSourceUpdatedAt",
       cards.name,
       cards.collector_number AS "collectorNumber",
       cards.set_name AS "set",
@@ -27,7 +33,7 @@ export async function GET() {
       cards.domains,
       cards.supertype,
       cards.image_url AS "imageUrl"
-    FROM listings
+    FROM listing_prices AS listings
     JOIN cards ON cards.id = listings.card_id
     WHERE listings.user_id = ${user.id} AND listings.is_active
     ORDER BY cards.name, cards.set_id, cards.collector_number
@@ -53,11 +59,12 @@ export async function PUT(request: Request) {
       finish: item.finish ?? "nonfoil",
       quantity: Math.max(0, Math.floor(Number(item.quantity) || 0)),
       min_price_vnd: Math.max(0, Math.round(Number(item.minPrice) || 0)),
-      tcg_multiplier: Math.max(0, Number(item.tcgMultiplier) || 0.9),
+      tcg_multiplier: Math.max(0, Number(item.tcgMultiplier) || 25),
     }))
     .filter((item) => item.card_id && item.quantity > 0);
   const sql = getDb();
   const payload = JSON.stringify(items);
+  const autoFoilRarities = [...RIFTBOUND_AUTO_FOIL_RARITIES];
   await sql.transaction((tx) => [
     tx`UPDATE listings SET is_active = false, updated_at = now() WHERE user_id = ${user.id}`,
     tx`
@@ -68,8 +75,8 @@ export async function PUT(request: Request) {
       FROM (
         SELECT item.card_id,
           CASE
-            WHEN lower(cards.rarity) IN ('common', 'uncommon') THEN item.finish
-            ELSE 'foil'
+            WHEN cards.rarity = ANY(${autoFoilRarities}) THEN 'foil'
+            ELSE item.finish
           END AS finish,
           item.quantity, item.min_price_vnd, item.tcg_multiplier
         FROM jsonb_to_recordset(${payload}::jsonb) AS item(card_id text, finish text, quantity integer, min_price_vnd bigint, tcg_multiplier numeric)
@@ -84,5 +91,33 @@ export async function PUT(request: Request) {
         updated_at = now()
     `,
   ]);
-  return NextResponse.json({ saved: items.length });
+  let priceSync: "synced" | "not-needed" | "failed" = "not-needed";
+  try {
+    const result = await syncMissingListingPricesForUser(user.id);
+    if (result.cards > 0) priceSync = "synced";
+  } catch (error) {
+    priceSync = "failed";
+    console.error("[listings.price-sync]", error);
+  }
+  const priceRows = await sql`
+    SELECT DISTINCT prices.card_id AS "cardId", prices.finish,
+      prices.market_price_usd::float8 AS "marketPriceUsd",
+      prices.source_updated_at AS "sourceUpdatedAt"
+    FROM card_market_prices AS prices
+    JOIN listings ON listings.card_id = prices.card_id
+      AND listings.finish = prices.finish
+    WHERE listings.user_id = ${user.id}
+      AND listings.is_active
+      AND listings.quantity > 0
+  `;
+  return NextResponse.json({
+    saved: items.length,
+    priceSync,
+    priceUpdates: priceRows.map((row) => ({
+      cardId: String(row.cardId),
+      finish: row.finish === "foil" ? "foil" : "nonfoil",
+      marketPriceUsd: Number(row.marketPriceUsd),
+      sourceUpdatedAt: row.sourceUpdatedAt,
+    })),
+  });
 }

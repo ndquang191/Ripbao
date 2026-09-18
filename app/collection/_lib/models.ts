@@ -8,10 +8,15 @@ export type CardData = {
   domains: string[];
   supertype?: string | null;
   imageUrl: string;
-  tcgPrice?: number;
+  tcgPrices: Partial<Record<Finish, TcgPrice>>;
 };
 
 export type Finish = "nonfoil" | "foil";
+
+export type TcgPrice = {
+  marketPriceUsd: number;
+  sourceUpdatedAt: string;
+};
 
 export type ApiListing = {
   finish: Finish;
@@ -24,7 +29,8 @@ export type ApiListing = {
   domains: string[];
   supertype?: string | null;
   imageUrl: string;
-  tcgPrice?: number;
+  marketPriceUsd?: number | null;
+  priceSourceUpdatedAt?: string | null;
   quantity: number;
   minPrice: number | string;
   tcgMultiplier: number;

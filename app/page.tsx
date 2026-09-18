@@ -58,12 +58,12 @@ async function loadFeaturedCard(): Promise<FeaturedCard | null> {
     const sql = getDb();
     const [row] = await sql`
       SELECT cards.name, cards.image_url AS "imageUrl",
-        listings.min_price_vnd AS price,
+        listings.effective_price_vnd AS price,
         round(listings.tcg_multiplier * 100)::integer AS "tcgPercent"
-      FROM listings
+      FROM listing_prices AS listings
       JOIN cards ON cards.id = listings.card_id
       WHERE listings.is_active AND listings.quantity > 0 AND cards.is_active
-      ORDER BY listings.min_price_vnd DESC, cards.name
+      ORDER BY listings.effective_price_vnd DESC, cards.name
       LIMIT 1
     `;
     if (!row) return null;
@@ -145,10 +145,10 @@ export default async function Home() {
   ]);
   return (
     <main className="paper-grid min-h-dvh overflow-x-hidden">
-      <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-4 py-5 sm:px-8 lg:py-7">
+      <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-3 py-3 sm:px-8 sm:py-5 lg:py-7">
         <SiteHeader />
 
-        <section className="grid flex-1 items-center gap-8 py-5 lg:grid-cols-[1.05fr_.95fr] lg:gap-14 lg:py-2">
+        <section className="grid flex-1 items-center gap-8 py-4 sm:py-5 lg:grid-cols-[1.05fr_.95fr] lg:gap-14 lg:py-2">
           <div>
             <form action="/search" className="relative mb-5" role="search">
               <Search className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />

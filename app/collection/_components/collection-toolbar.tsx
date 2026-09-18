@@ -13,7 +13,8 @@ export function CollectionToolbar(props: {
   copyCount: number;
   dirty: boolean;
   saving: boolean;
-  saveStatus: "idle" | "saved" | "error";
+  priceLookupPending: boolean;
+  saveStatus: "idle" | "saved" | "price-warning" | "error";
   pricingOpen: boolean;
   setPricingOpen: (open: boolean) => void;
   minimums: Record<string, number>;
@@ -26,7 +27,7 @@ export function CollectionToolbar(props: {
   saveChanges: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-4 py-5 sm:py-6 lg:flex-row lg:items-end lg:justify-between">
+    <div className="flex flex-col gap-4 py-4 sm:py-6 lg:flex-row lg:items-end lg:justify-between">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
         <PageTitle icon={LibraryBig}>Bộ sưu tập của bạn</PageTitle>
         <p className="text-sm text-muted-foreground sm:mt-2 sm:text-xs">
@@ -70,19 +71,21 @@ export function CollectionToolbar(props: {
         <Button
           size="sm"
           className="col-span-2 min-h-11 text-sm sm:col-span-1 sm:min-h-0 sm:text-xs"
-          disabled={!props.dirty || props.saving}
+          disabled={!props.dirty || props.saving || props.priceLookupPending}
           onClick={props.saveChanges}
         >
-          {props.saving ? (
+          {props.saving || props.priceLookupPending ? (
             <Loader2 className="size-3.5 animate-spin" />
-          ) : props.saveStatus === "saved" ? (
+          ) : props.saveStatus === "saved" || props.saveStatus === "price-warning" ? (
             <Check className="size-3.5" />
           ) : (
             <Save className="size-3.5" />
           )}
-          {props.saving
+          {props.priceLookupPending
+            ? "Đang lấy giá..."
+            : props.saving
             ? "Đang lưu..."
-            : props.saveStatus === "saved"
+            : props.saveStatus === "saved" || props.saveStatus === "price-warning"
               ? "Đã lưu"
               : "Lưu thay đổi"}
         </Button>

@@ -25,6 +25,8 @@ import {
   RIFTBOUND_CARD_TYPES,
   RIFTBOUND_DOMAINS,
   RIFTBOUND_RARITIES,
+  RIFTBOUND_SET_CODES,
+  RIFTBOUND_SET_NAMES,
 } from "@/lib/riftbound-constants";
 
 type Finish = "Foil" | "No Foil";
@@ -53,8 +55,8 @@ type GroupedCollectionCard = CollectionCard & {
   variants: CollectionCard[];
 };
 
-const knownSets = ["Origins", "Spiritforged", "Unleashed", "Vendetta"];
 const sortOptions = ["Theo tên", "Giá tăng dần", "Giá giảm dần"] as const;
+const finishOptions = ["Thường", "Foil"] as const;
 const collectionPageSize = 24;
 
 export function Collection({
@@ -77,6 +79,7 @@ export function Collection({
   const [type, setType] = useState("");
   const [rarity, setRarity] = useState("");
   const [faction, setFaction] = useState("");
+  const [finish, setFinish] = useState("");
   const [sort, setSort] = useState<(typeof sortOptions)[number]>("Theo tên");
   const [onlySelected, setOnlySelected] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -87,7 +90,7 @@ export function Collection({
   const filterOptions = useMemo(
     () => ({
       sets: mergeValues(
-        knownSets,
+        RIFTBOUND_SET_NAMES,
         ownedCards.map((card) => card.set),
       ),
       types: RIFTBOUND_CARD_TYPES,
@@ -111,6 +114,13 @@ export function Collection({
       const matchesRarity = !rarity || card.rarity === rarity;
       const matchesFaction =
         !faction || card.domains?.includes(faction) || card.faction === faction;
+      const matchesFinish =
+        !finish ||
+        card.variants.some((variant) =>
+          finish === "Foil"
+            ? variant.finish === "Foil"
+            : variant.finish === "No Foil",
+        );
       const matchesSelected =
         !onlySelected ||
         card.variants.some((variant) =>
@@ -131,6 +141,7 @@ export function Collection({
         matchesType &&
         matchesRarity &&
         matchesFaction &&
+        matchesFinish &&
         matchesSelected
       );
     });
@@ -138,6 +149,7 @@ export function Collection({
     return matches.sort((a, b) => compareCards(a, b, sort));
   }, [
     faction,
+    finish,
     items,
     onlySelected,
     ownedCards,
@@ -151,17 +163,18 @@ export function Collection({
 
   const hasFilters =
     query.length > 0 ||
-    Boolean(set || type || rarity || faction || onlySelected);
+    Boolean(set || type || rarity || faction || finish || onlySelected);
 
   useEffect(() => {
     setVisibleCount(collectionPageSize);
-  }, [faction, onlySelected, query, rarity, set, sort, type]);
+  }, [faction, finish, onlySelected, query, rarity, set, sort, type]);
   const clearFilters = () => {
     setQuery("");
     setSet("");
     setType("");
     setRarity("");
     setFaction("");
+    setFinish("");
     setOnlySelected(false);
   };
 
@@ -195,7 +208,7 @@ export function Collection({
         </div>
       </div>
 
-      <div className="relative z-30 mb-5 overflow-visible border-y bg-card/60">
+      <div className="relative z-30 mb-5 overflow-visible rounded-sm border bg-card/60">
         <button
           type="button"
           onClick={() => setFiltersOpen((open) => !open)}
@@ -252,6 +265,13 @@ export function Collection({
             onChange={setFaction}
             className="w-full [&>summary]:w-full sm:w-auto"
           />
+          <FilterDropdown
+            label="Phiên bản"
+            value={finish}
+            options={finishOptions}
+            onChange={setFinish}
+            className="w-full [&>summary]:w-full sm:w-auto"
+          />
           {!isOwner && (
             <label
               className={cn(
@@ -294,6 +314,16 @@ export function Collection({
       {filteredCards.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 max-[359px]:grid-cols-1 sm:grid-cols-3 lg:grid-cols-6">
           {filteredCards.slice(0, visibleCount).map((card) => {
+            const variantKeys = new Set(
+              card.variants.map((variant) =>
+                cartItemKey(
+                  sellerKey,
+                  variant.id,
+                  variant.finish,
+                  variant.condition,
+                ),
+              ),
+            );
             const variantStates = card.variants.map((variant) => ({
               variant,
               cartItem: items.find(
@@ -308,8 +338,9 @@ export function Collection({
               ),
             }));
             const cartItem = variantStates[0]?.cartItem;
-            const selectedQuantity = variantStates.reduce(
-              (total, state) => total + (state.cartItem?.quantity ?? 0),
+            const selectedQuantity = items.reduce(
+              (total, item) =>
+                total + (variantKeys.has(item.key) ? item.quantity : 0),
               0,
             );
             const hasBoth = card.variants.length > 1;
@@ -337,9 +368,16 @@ export function Collection({
                 role="button"
                 tabIndex={0}
                 aria-label={`Xem ảnh ${card.name}`}
-                onClick={() => card.imageUrl && setPreviewCard(card)}
+                onClick={() => {
+                  if (
+                    window.matchMedia("(min-width: 640px)").matches &&
+                    card.imageUrl
+                  )
+                    setPreviewCard(card);
+                }}
                 onKeyDown={(event) => {
                   if (
+                    window.matchMedia("(min-width: 640px)").matches &&
                     event.target === event.currentTarget &&
                     (event.key === "Enter" || event.key === " ") &&
                     card.imageUrl
@@ -349,7 +387,7 @@ export function Collection({
                   }
                 }}
                 className={cn(
-                  "group relative flex h-full cursor-default flex-col overflow-visible transition-all hover:z-20 hover:-translate-y-1 hover:border-[#8ba55e] hover:shadow-lg focus-within:z-20",
+                  "group relative flex h-full cursor-default flex-col overflow-visible transition-all sm:hover:z-20 sm:hover:-translate-y-1 sm:hover:border-[#8ba55e] sm:hover:shadow-lg sm:focus-within:z-20",
                   selectedQuantity > 0 && "z-30 hover:z-30 focus-within:z-30",
                 )}
               >
@@ -375,7 +413,7 @@ export function Collection({
                 )}
                 <div
                   className={cn(
-                    "relative m-2.5 mb-0 grid aspect-[469/655] place-items-center overflow-hidden rounded-[10px] bg-gradient-to-br",
+                    "relative m-3.5 mb-0 grid aspect-[469/655] place-items-center overflow-hidden rounded-[10px] bg-gradient-to-br sm:m-2.5 sm:mb-0",
                     card.gradient,
                   )}
                 >
@@ -494,12 +532,19 @@ export function Collection({
                       <span className="inline-flex h-5 min-w-9 shrink-0 items-center justify-center rounded-sm border border-[#4f86c6]/70 bg-[#dcecff] px-1.5 text-center text-[8px] leading-none font-black tracking-wider text-[#24558d]">
                         {setCode(card.set)}
                       </span>
-                      {hasBoth && (
-                        <>
-                          <span className="rounded-sm border bg-secondary px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">Thường</span>
-                          <span className="rounded-sm border border-primary/30 bg-accent/40 px-1.5 py-0.5 text-[9px] font-bold text-primary">Foil</span>
-                        </>
-                      )}
+                      {card.variants.map((variant) => (
+                        <span
+                          key={variant.finish}
+                          className={cn(
+                            "rounded-sm border px-1.5 py-0.5 text-[9px] font-bold",
+                            variant.finish === "Foil"
+                              ? "border-primary/30 bg-accent/40 text-primary"
+                              : "bg-secondary text-muted-foreground",
+                          )}
+                        >
+                          {variant.finish === "Foil" ? "Foil" : "Thường"}
+                        </span>
+                      ))}
                     </div>
                     <div className="mt-auto grid h-[3.75rem] grid-rows-2 gap-1 border-t pt-1.5">
                       {[...card.variants, null].slice(0, 2).map((variant, index) =>
@@ -526,30 +571,38 @@ export function Collection({
                       )}
                     </div>
                     {!isOwner && (
-                      <div className="mt-2 border-t pt-2 sm:hidden">
+                      <div className="mt-1.5 flex min-h-[5.25rem] flex-col justify-end border-t pt-1.5 sm:hidden">
                         {hasBoth ? (
-                          <div className="space-y-2">
+                          <div className="space-y-1">
                             {variantStates.map(({ variant, cartItem: selected }) => {
                               const label = variant.finish === "Foil" ? "Foil" : "Thường";
                               return selected ? (
-                                <div key={variant.finish} className="flex h-11 items-center overflow-hidden rounded-md border bg-background">
-                                  <span className="w-14 pl-2 text-[9px] font-black">{label}</span>
-                                  <button type="button" onClick={(event) => { event.stopPropagation(); updateQuantity(selected.key, selected.quantity - 1); }} className="grid h-full flex-1 place-items-center"><Minus className="size-3.5" /></button>
-                                  <span className="grid h-full min-w-12 place-items-center border-x text-[10px] font-black">{selected.quantity}/{variant.quantity}</span>
-                                  <button type="button" disabled={selected.quantity >= variant.quantity} onClick={(event) => { event.stopPropagation(); updateQuantity(selected.key, selected.quantity + 1); }} className="grid h-full flex-1 place-items-center disabled:opacity-30"><Plus className="size-3.5" /></button>
+                                <div key={variant.finish} className="flex h-9 items-center overflow-hidden rounded-md border bg-background">
+                                  <span className="w-12 pl-2 text-[9px] font-black">{label}</span>
+                                  <button type="button" onClick={(event) => { event.stopPropagation(); updateQuantity(selected.key, selected.quantity - 1); }} className="grid h-full flex-1 place-items-center"><Minus className="size-3" /></button>
+                                  <QuantityInput
+                                    itemKey={selected.key}
+                                    quantity={selected.quantity}
+                                    max={variant.quantity}
+                                    updateQuantity={updateQuantity}
+                                  />
+                                  <button type="button" disabled={selected.quantity >= variant.quantity} onClick={(event) => { event.stopPropagation(); updateQuantity(selected.key, selected.quantity + 1); }} className="grid h-full flex-1 place-items-center disabled:opacity-30"><Plus className="size-3" /></button>
                                 </div>
                               ) : (
-                                <Button key={variant.finish} type="button" variant="accent" size="sm" className="h-11 w-full text-sm" onClick={(event) => { event.stopPropagation(); addCardToCart(variant); }}>
-                                  <ShoppingBag className="size-3.5" /> Thêm {label}
+                                <Button key={variant.finish} type="button" variant="accent" size="sm" className="h-9 w-full text-xs" onClick={(event) => { event.stopPropagation(); addCardToCart(variant); }}>
+                                  <ShoppingBag className="size-3" /> {label}
                                 </Button>
                               );
                             })}
                           </div>
                         ) : cartItem ? (
                           <div
-                            className="flex h-11 items-center overflow-hidden rounded-md border bg-background sm:h-9"
+                            className="flex h-9 items-center overflow-hidden rounded-md border bg-background"
                             aria-label={`${card.name}: đã chọn ${cartItem.quantity} trên ${card.quantity}`}
                           >
+                            <span className="w-12 pl-2 text-[9px] font-black">
+                              {card.finish === "Foil" ? "Foil" : "Thường"}
+                            </span>
                             <button
                               type="button"
                               onClick={(event) => {
@@ -562,11 +615,14 @@ export function Collection({
                               className="grid h-full flex-1 place-items-center text-muted-foreground active:bg-secondary active:text-foreground"
                               aria-label={`Giảm số lượng ${card.name}`}
                             >
-                              <Minus className="size-3.5" />
+                              <Minus className="size-3" />
                             </button>
-                            <span className="grid h-full min-w-12 place-items-center border-x bg-card px-1 text-[10px] font-black">
-                              {cartItem.quantity}/{card.quantity}
-                            </span>
+                            <QuantityInput
+                              itemKey={cartItem.key}
+                              quantity={cartItem.quantity}
+                              max={card.quantity}
+                              updateQuantity={updateQuantity}
+                            />
                             <button
                               type="button"
                               disabled={atLimit}
@@ -580,7 +636,7 @@ export function Collection({
                               className="grid h-full flex-1 place-items-center text-primary active:bg-secondary disabled:opacity-30"
                               aria-label={`Tăng số lượng ${card.name}`}
                             >
-                              <Plus className="size-3.5" />
+                              <Plus className="size-3" />
                             </button>
                           </div>
                         ) : (
@@ -588,7 +644,7 @@ export function Collection({
                             type="button"
                             variant="accent"
                             size="sm"
-                            className="h-11 w-full px-2 text-sm sm:h-9 sm:text-[10px]"
+                            className="h-9 w-full px-2 text-xs"
                             onClick={(event) => {
                               event.stopPropagation();
                               addCardToCart();
@@ -596,10 +652,10 @@ export function Collection({
                             aria-label={`Thêm ${card.name} vào giỏ`}
                           >
                             <ShoppingBag
-                              className="size-3.5"
+                              className="size-3"
                               strokeWidth={2.25}
                             />
-                            Thêm vào giỏ
+                            {card.finish === "Foil" ? "Foil" : "Thường"}
                           </Button>
                         )}
                       </div>
@@ -702,6 +758,65 @@ function mergeValues(requiredValues: string[], actualValues: string[]) {
   return [...new Set([...requiredValues, ...actualValues.filter(Boolean)])];
 }
 
+function QuantityInput({
+  itemKey,
+  quantity,
+  max,
+  updateQuantity,
+}: {
+  itemKey: string;
+  quantity: number;
+  max: number;
+  updateQuantity: (key: string, quantity: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(quantity));
+
+  useEffect(() => setDraft(String(quantity)), [quantity]);
+
+  const commit = () => {
+    const parsed = Number.parseInt(draft, 10);
+    const next = Number.isFinite(parsed)
+      ? Math.max(0, Math.min(parsed, max))
+      : quantity;
+    setDraft(String(next));
+    setEditing(false);
+    updateQuantity(itemKey, next);
+  };
+
+  return (
+    <label className="grid h-full min-w-16 grid-cols-[1fr_auto_1fr] items-center border-x bg-card px-1 text-xs font-black">
+      <input
+        type="number"
+        inputMode="numeric"
+        min={0}
+        max={max}
+        value={editing ? draft : quantity}
+        onFocus={(event) => {
+          setEditing(true);
+          event.currentTarget.select();
+        }}
+        onChange={(event) => {
+          const value = event.target.value;
+          if (value === "") return setDraft("");
+          const parsed = Number.parseInt(value, 10);
+          setDraft(String(Math.min(parsed, max)));
+        }}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          event.stopPropagation();
+          if (event.key === "Enter") event.currentTarget.blur();
+        }}
+        onClick={(event) => event.stopPropagation()}
+        aria-label="Số lượng đã chọn"
+        className="w-full appearance-none bg-transparent text-right font-black outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
+      <span aria-hidden="true">/</span>
+      <span aria-hidden="true" className="text-left">{max}</span>
+    </label>
+  );
+}
+
 function groupCollectionCards(cards: CollectionCard[]): GroupedCollectionCard[] {
   const groups = new Map<string, CollectionCard[]>();
   cards.forEach((card) =>
@@ -720,14 +835,8 @@ function groupCollectionCards(cards: CollectionCard[]): GroupedCollectionCard[] 
 }
 
 function setCode(set: string) {
-  const knownCodes: Record<string, string> = {
-    Origins: "OGN",
-    Spiritforged: "SFD",
-    Unleashed: "UNL",
-    Vendetta: "VEN",
-  };
   return (
-    knownCodes[set] ??
+    RIFTBOUND_SET_CODES[set] ??
     set
       .replace(/[^a-z0-9]/gi, "")
       .slice(0, 3)

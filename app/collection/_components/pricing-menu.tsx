@@ -3,6 +3,7 @@
 import { useId, useRef } from "react";
 import { Check, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ResponsiveDropdownPanel } from "@/components/ui/responsive-dropdown-panel";
 import { cn } from "@/lib/utils";
 import { useCoordinatedDropdown } from "@/lib/use-coordinated-dropdown";
 import { defaultMin, defaultMultiplier } from "../_lib/collection-utils";
@@ -40,20 +41,13 @@ export function PricingMenu(props: {
         <ChevronDown className={cn("size-3", props.open && "rotate-180")} />
       </Button>
       {props.open && (
-        <>
-          <button
-            type="button"
-            tabIndex={-1}
-            aria-hidden="true"
-            className="fixed inset-0 z-40 bg-black/30 sm:hidden"
-            onClick={() => props.setOpen(false)}
-          />
-          <div
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[min(85dvh,42rem)] overflow-y-auto overscroll-contain rounded-t-xl border bg-card p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:bottom-auto sm:z-40 sm:mt-2 sm:max-h-none sm:w-[min(92vw,420px)] sm:overflow-visible sm:rounded-sm sm:p-3"
-            role="dialog"
-            aria-label="Thiết lập giá nhanh"
-          >
-            <strong className="text-base sm:text-xs">Thiết lập giá nhanh</strong>
+        <ResponsiveDropdownPanel
+          title="Thiết lập giá nhanh"
+          onClose={() => props.setOpen(false)}
+          showDesktopHeader
+          className="sm:top-full sm:right-0 sm:z-40 sm:mt-2 sm:w-[min(92vw,420px)] sm:p-3"
+          role="dialog"
+        >
             <div className="mt-3 grid grid-cols-[minmax(0,1fr)_minmax(96px,120px)_72px] items-center gap-2 max-sm:[&_input]:h-11 max-sm:[&_input]:text-sm sm:grid-cols-[1fr_120px_90px]">
               <span className="text-[9px] font-bold text-muted-foreground">
                 Độ hiếm
@@ -62,7 +56,7 @@ export function PricingMenu(props: {
                 Giá tối thiểu
               </span>
               <span className="text-[9px] font-bold text-muted-foreground">
-                Hệ số TCG
+                TCG × 1.000₫/$
               </span>
               {props.rarities.map((rarity) => (
                 <div key={rarity} className="contents">
@@ -102,8 +96,7 @@ export function PricingMenu(props: {
                 <Check className="size-3" /> Áp dụng
               </Button>
             </div>
-          </div>
-        </>
+        </ResponsiveDropdownPanel>
       )}
     </div>
   );

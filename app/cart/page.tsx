@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Check, Copy, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { type CartItem, useCart } from "@/components/cart-provider";
 import { CardImagePreview } from "@/components/card-image-preview";
 import { EmptyState } from "@/components/empty-state";
@@ -19,13 +19,10 @@ import { useModalDialog } from "@/app/collection/_hooks/use-modal-dialog";
 export default function CartPage() {
   const {
     items,
-    count,
     sessionUser,
     setSessionUser,
     updateQuantity,
     removeItem,
-    clear,
-    saveStatus,
   } = useCart();
   const [copiedSeller, setCopiedSeller] = useState<string | null>(null);
   const [sendingSellers, setSendingSellers] = useState<Set<string>>(
@@ -36,6 +33,10 @@ export default function CartPage() {
   const [pendingItems, setPendingItems] = useState<typeof items>([]);
   const [quantityLimitKey, setQuantityLimitKey] = useState<string | null>(null);
   const [itemToRemove, setItemToRemove] = useState<CartItem | null>(null);
+  const [sellerToClear, setSellerToClear] = useState<{
+    displayName: string;
+    items: CartItem[];
+  } | null>(null);
   const quantityLimitTimer = useRef<number | null>(null);
   const guestDialogRef = useRef<HTMLDivElement>(null);
 
@@ -189,38 +190,13 @@ export default function CartPage() {
 
   return (
     <main className="paper-grid min-h-dvh">
-      <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-8 lg:py-7">
+      <div className="mx-auto w-full max-w-6xl px-3 py-3 sm:px-8 sm:py-5 lg:py-7">
         <SiteHeader />
 
-        <div className="flex flex-col items-start gap-2 py-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:py-7">
+        <div className="flex flex-col items-start gap-1.5 py-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:py-7">
           <div>
             <PageTitle icon={ShoppingBag}>Giỏ hàng</PageTitle>
-            <p className="mt-1 text-sm text-muted-foreground sm:text-xs">
-              {count} card từ {groups.length} collection
-              {saveStatus === "saving" && (
-                <span className="block sm:inline" role="status">
-                  <span className="hidden sm:inline"> · </span>
-                  Đang lưu…
-                </span>
-              )}
-              {saveStatus === "error" && (
-                <span className="block text-destructive sm:inline" role="alert">
-                  <span className="hidden sm:inline"> · </span>
-                  Lưu giỏ hàng thất bại
-                </span>
-              )}
-            </p>
           </div>
-          {items.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clear}
-              className="min-h-11 text-sm text-destructive sm:min-h-0 sm:text-xs"
-            >
-              <Trash2 className="size-3.5" /> Xoá giỏ hàng
-            </Button>
-          )}
         </div>
 
         {items.length === 0 ? (
@@ -228,20 +204,20 @@ export default function CartPage() {
             icon={ShoppingBag}
             title="Giỏ hàng đang trống"
             description="Khám phá các collection và chọn card bạn thích."
-            className="min-h-72 max-sm:[&>div]:p-5 max-sm:[&_p]:text-sm"
+            className="min-h-56 max-sm:[&>div]:p-4 max-sm:[&_p]:text-xs sm:min-h-72"
           >
             <Link
               href="/"
               className={cn(
                 buttonVariants({ size: "sm" }),
-                "mt-5 min-h-11 w-full text-sm sm:min-h-0 sm:w-auto sm:text-xs",
+                "mt-4 min-h-10 w-full text-xs sm:mt-5 sm:min-h-0 sm:w-auto",
               )}
             >
               Khám phá collection
             </Link>
           </EmptyState>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-3 sm:space-y-5">
             {groups.map(([seller, sellerItems]) => {
               const pricedItems = sellerItems.map((item) => ({
                 item,
@@ -304,13 +280,13 @@ export default function CartPage() {
               return (
                 <section
                   key={seller}
-                  className="overflow-hidden rounded-lg border bg-card/55 shadow-sm sm:overflow-visible sm:rounded-none sm:border-x-0 sm:border-t-0 sm:bg-transparent sm:pb-5 sm:shadow-none"
+                  className="overflow-hidden rounded-md border bg-card/55 shadow-sm sm:overflow-visible sm:rounded-none sm:border-x-0 sm:border-t-0 sm:bg-transparent sm:pb-5 sm:shadow-none"
                 >
-                  <div className="flex items-center justify-between gap-2 border-b bg-card/80 px-3 py-2 sm:mb-2 sm:flex-wrap sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+                  <div className="flex items-center justify-between gap-2 border-b bg-card/80 px-2.5 py-1.5 sm:mb-2 sm:flex-wrap sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
                     <div className="flex min-w-0 items-center gap-2 sm:gap-1.5">
                       <Link
                         href={`/u/${encodeURIComponent(seller)}`}
-                        className="min-w-0 truncate py-2 font-bold hover:text-[#5f793f] hover:underline sm:py-0"
+                        className="min-w-0 truncate py-1 text-sm font-bold hover:text-[#5f793f] hover:underline sm:py-0 sm:text-base"
                       >
                         {sellerDisplayName}
                       </Link>
@@ -319,7 +295,7 @@ export default function CartPage() {
                           href={sellerFacebookUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="grid size-10 shrink-0 place-items-center rounded-sm border bg-card text-sm font-black text-primary transition-colors hover:bg-secondary sm:size-6 sm:text-[10px]"
+                          className="grid size-8 shrink-0 place-items-center rounded-sm border bg-card text-xs font-black text-primary transition-colors hover:bg-secondary sm:size-6 sm:text-[10px]"
                           aria-label={`Mở Facebook của ${sellerDisplayName} để nhắn tin`}
                           title="Mở Facebook để nhắn tin"
                         >
@@ -338,7 +314,7 @@ export default function CartPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-10 px-3 text-xs sm:h-7 sm:px-2 sm:text-[9px]"
+                        className="h-8 px-2 text-[10px] sm:h-7 sm:text-[9px]"
                         onClick={copyCards}
                       >
                         {copiedSeller === seller ? (
@@ -348,45 +324,60 @@ export default function CartPage() {
                         )}
                         {copiedSeller === seller ? "Đã copy" : "Copy"}
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 rounded-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:size-7"
+                        onClick={() =>
+                          setSellerToClear({
+                            displayName: sellerDisplayName,
+                            items: sellerItems,
+                          })
+                        }
+                        aria-label={`Xoá card từ collection của ${sellerDisplayName}`}
+                        title="Xoá collection khỏi giỏ"
+                      >
+                        <Trash2 className="size-3.5 sm:size-3" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 divide-y px-3 sm:grid-cols-2 sm:gap-2.5 sm:divide-y-0 sm:px-0 md:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid grid-cols-1 divide-y px-2.5 sm:grid-cols-2 sm:gap-2.5 sm:divide-y-0 sm:px-0 md:grid-cols-3 lg:grid-cols-4">
                     {sellerItems.map((item) => {
                       const unitPrice = parseCurrency(item.price);
                       return (
                         <Card
                           key={item.key}
-                          className="min-w-0 rounded-none border-0 bg-transparent px-0 py-3 shadow-none sm:relative sm:overflow-hidden sm:rounded-lg sm:border sm:bg-card sm:p-2.5 sm:shadow-sm"
+                          className="min-w-0 rounded-none border-0 bg-transparent px-0 py-2 shadow-none sm:relative sm:overflow-hidden sm:rounded-lg sm:border sm:bg-card sm:p-2.5 sm:shadow-sm"
                         >
-                          <div className="flex min-w-0 gap-3 sm:gap-2.5">
+                          <div className="flex min-w-0 gap-2.5">
                             <CardImagePreview
                               src={item.imageUrl}
                               alt={item.name}
                               className={cn(
-                                "relative grid h-28 aspect-[469/655] place-items-center rounded-[7px] border-2 border-[#bca66e] bg-gradient-to-br sm:h-20 sm:rounded-[5px]",
+                                "relative grid h-24 aspect-[469/655] place-items-center rounded-[5px] border-2 border-[#bca66e] bg-gradient-to-br sm:h-20",
                                 item.gradient,
                               )}
                               imageClassName="absolute inset-0"
                             />
                             <div className="flex min-w-0 flex-1 flex-col pt-0.5 sm:block">
                               <div className="flex min-w-0 items-start justify-between gap-1">
-                                <h2 className="min-w-0 text-base leading-6 font-bold [overflow-wrap:anywhere] sm:mt-1 sm:truncate sm:pr-5 sm:text-xs sm:leading-4">
+                                <h2 className="min-w-0 text-sm leading-5 font-bold [overflow-wrap:anywhere] sm:mt-1 sm:truncate sm:pr-5 sm:text-xs sm:leading-4">
                                   {item.name}
                                 </h2>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="-mt-2 -mr-2 size-11 shrink-0 rounded-sm text-muted-foreground hover:text-destructive sm:absolute sm:top-1 sm:right-1 sm:z-10 sm:mt-0 sm:mr-0 sm:size-6 sm:bg-card/85 sm:shadow-sm sm:backdrop-blur"
+                                  className="-mt-1.5 -mr-1.5 size-8 shrink-0 rounded-sm text-muted-foreground hover:text-destructive sm:absolute sm:top-1 sm:right-1 sm:z-10 sm:mt-0 sm:mr-0 sm:size-6 sm:bg-card/85 sm:shadow-sm sm:backdrop-blur"
                                   onClick={() => setItemToRemove(item)}
                                   aria-label={`Xoá ${item.name}`}
                                 >
-                                  <Trash2 className="size-4 sm:size-3" />
+                                  <Trash2 className="size-3" />
                                 </Button>
                               </div>
-                              <p className="mt-1 text-xs font-bold tracking-wide text-muted-foreground uppercase [overflow-wrap:anywhere] sm:mt-0 sm:truncate sm:pr-5 sm:text-[8px]">
+                              <p className="mt-0.5 text-[10px] font-bold tracking-wide text-muted-foreground uppercase [overflow-wrap:anywhere] sm:mt-0 sm:truncate sm:pr-5 sm:text-[8px]">
                                 {item.set} · {item.number}
                               </p>
-                              <span className="mt-auto block pt-3 text-sm text-muted-foreground [overflow-wrap:anywhere] sm:mt-3 sm:pt-0 sm:text-[9px]">
+                              <span className="mt-auto block pt-2 text-xs text-muted-foreground [overflow-wrap:anywhere] sm:mt-3 sm:pt-0 sm:text-[9px]">
                                 {unitPrice === null
                                   ? item.price
                                   : formatCurrency(unitPrice)}{" "}
@@ -394,8 +385,8 @@ export default function CartPage() {
                               </span>
                             </div>
                           </div>
-                          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3 sm:mt-2 sm:flex-nowrap sm:gap-0 sm:pt-1.5">
-                            <strong className="text-base sm:text-xs">
+                          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t pt-2 sm:flex-nowrap sm:gap-0 sm:pt-1.5">
+                            <strong className="text-sm sm:text-xs">
                               {unitPrice === null
                                 ? "Liên hệ"
                                 : formatCurrency(unitPrice * item.quantity)}
@@ -403,30 +394,30 @@ export default function CartPage() {
                             <div className="flex items-center rounded-sm border bg-background p-px">
                               <button
                                 type="button"
-                                className="grid size-11 shrink-0 place-items-center sm:size-4.5 rounded-sm hover:bg-secondary disabled:opacity-30"
+                                className="grid size-8 shrink-0 place-items-center rounded-sm hover:bg-secondary disabled:opacity-30 sm:size-4.5"
                                 disabled={item.quantity <= 1}
                                 onClick={() =>
                                   changeQuantity(item.key, item.quantity - 1)
                                 }
                                 aria-label="Giảm số lượng"
                               >
-                                <Minus className="size-4 sm:size-2.5" />
+                                <Minus className="size-3 sm:size-2.5" />
                               </button>
-                              <span className="min-w-9 px-1 text-center text-sm font-black sm:w-7 sm:min-w-0 sm:px-0 sm:text-[8px]">
+                              <span className="min-w-8 px-1 text-center text-xs font-black sm:w-7 sm:min-w-0 sm:px-0 sm:text-[8px]">
                                 {item.quantity}
                                 {quantityLimitKey === item.key &&
                                   `/${item.stock}`}
                               </span>
                               <button
                                 type="button"
-                                className="grid size-11 shrink-0 place-items-center sm:size-4.5 rounded-sm hover:bg-secondary disabled:opacity-30"
+                                className="grid size-8 shrink-0 place-items-center rounded-sm hover:bg-secondary disabled:opacity-30 sm:size-4.5"
                                 disabled={item.quantity >= item.stock}
                                 onClick={() =>
                                   changeQuantity(item.key, item.quantity + 1)
                                 }
                                 aria-label="Tăng số lượng"
                               >
-                                <Plus className="size-4 sm:size-2.5" />
+                                <Plus className="size-3 sm:size-2.5" />
                               </button>
                             </div>
                           </div>
@@ -434,27 +425,27 @@ export default function CartPage() {
                       );
                     })}
                   </div>
-                  <div className="flex flex-col gap-3 border-t bg-card/80 p-3 sm:mt-4 sm:flex-row sm:justify-end sm:border-0 sm:bg-transparent sm:p-0">
-                    <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm sm:hidden">
+                  <div className="flex flex-col gap-2 border-t bg-card/80 p-2.5 sm:mt-4 sm:flex-row sm:justify-end sm:border-0 sm:bg-transparent sm:p-0">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs sm:hidden">
                       <span className="text-muted-foreground">
                         {sellerCount} card
                       </span>
                       <div className="min-w-0 text-right">
                         <span>
                           Tổng:{" "}
-                          <strong className="text-base">
+                          <strong className="text-sm">
                             {formatCurrency(sellerTotal)}
                           </strong>
                         </span>
                         {needsQuote && (
-                          <p className="mt-1 text-xs text-muted-foreground">
+                            <p className="mt-0.5 text-[10px] text-muted-foreground">
                             + card cần báo giá
                           </p>
                         )}
                       </div>
                     </div>
                     <Button
-                      className="h-12 w-full sm:h-10 sm:w-auto"
+                      className="h-10 w-full text-xs sm:w-auto sm:text-sm"
                       aria-label={`Gửi yêu cầu đến ${sellerDisplayName}`}
                       disabled={sendingSellers.has(seller)}
                       onClick={() => requestFromSeller(sellerItems)}
@@ -493,11 +484,11 @@ export default function CartPage() {
             aria-modal="true"
             aria-labelledby="guest-contact-title"
             aria-describedby="guest-contact-description"
-            className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain p-5 shadow-2xl sm:p-6"
+            className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain p-4 shadow-2xl sm:p-6"
           >
             <button
               type="button"
-              className="absolute top-3 right-3 grid size-11 sm:size-8 place-items-center rounded-full hover:bg-secondary"
+              className="absolute top-2.5 right-2.5 grid size-8 place-items-center rounded-sm hover:bg-secondary"
               onClick={() => setGuestDialogOpen(false)}
               aria-label="Đóng"
             >
@@ -505,24 +496,24 @@ export default function CartPage() {
             </button>
             <h2
               id="guest-contact-title"
-              className="pr-12 font-serif text-lg font-semibold [overflow-wrap:anywhere] sm:pr-8"
+              className="pr-9 font-serif text-base font-semibold [overflow-wrap:anywhere] sm:pr-8 sm:text-lg"
             >
               Gửi yêu cầu đến{" "}
               {pendingItems[0]?.sellerDisplayName || "người bán"}
             </h2>
             <p
               id="guest-contact-description"
-              className="mt-3 text-sm leading-6 text-muted-foreground sm:mt-2 sm:text-xs sm:leading-5"
+              className="mt-2 text-xs leading-5 text-muted-foreground"
             >
               Bạn có muốn tạo tài khoản để theo dõi và quản lý các yêu cầu mua
               dễ dàng hơn không? Nếu tiếp tục với tư cách khách, bạn sẽ cần chủ
               động liên lạc với người bán.
             </p>
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:mt-5 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
-                className="min-h-12 whitespace-normal sm:min-h-10"
+                className="min-h-10 whitespace-normal text-xs"
                 disabled={sendingSellers.has(pendingItems[0]?.seller ?? "")}
                 onClick={() => void sendRequest(pendingItems)}
               >
@@ -530,7 +521,7 @@ export default function CartPage() {
               </Button>
               <Link
                 href="/register?next=/cart"
-                className={cn(buttonVariants(), "min-h-12 sm:min-h-10")}
+                className={cn(buttonVariants(), "min-h-10 text-xs")}
                 onClick={() => setGuestDialogOpen(false)}
               >
                 Tạo tài khoản
@@ -540,8 +531,9 @@ export default function CartPage() {
         </div>
       )}
       {itemToRemove && (
-        <RemoveItemDialog
-          item={itemToRemove}
+        <ConfirmDeleteDialog
+          title="Xoá khỏi giỏ?"
+          description={itemToRemove.name}
           cancel={() => setItemToRemove(null)}
           confirm={() => {
             removeItem(itemToRemove.key);
@@ -549,20 +541,38 @@ export default function CartPage() {
           }}
         />
       )}
+      {sellerToClear && (
+        <ConfirmDeleteDialog
+          title={`Xoá card của ${sellerToClear.displayName}?`}
+          description={`${sellerToClear.items.reduce((total, item) => total + item.quantity, 0)} card thuộc collection này sẽ bị xoá khỏi giỏ hàng.`}
+          confirmLabel="Xoá collection"
+          cancel={() => setSellerToClear(null)}
+          confirm={() => {
+            sellerToClear.items.forEach((item) => removeItem(item.key));
+            setSellerToClear(null);
+          }}
+        />
+      )}
     </main>
   );
 }
 
-function RemoveItemDialog({
-  item,
+function ConfirmDeleteDialog({
+  title,
+  description,
+  confirmLabel = "Xoá",
   cancel,
   confirm,
 }: {
-  item: CartItem;
+  title: string;
+  description: string;
+  confirmLabel?: string;
   cancel: () => void;
   confirm: () => void;
 }) {
   const dialogRef = useRef<HTMLElement>(null);
+  const titleId = useId();
+  const descriptionId = useId();
   useModalDialog(dialogRef, cancel);
 
   return (
@@ -578,18 +588,18 @@ function RemoveItemDialog({
         tabIndex={-1}
         role="alertdialog"
         aria-modal="true"
-        aria-labelledby="remove-item-title"
-        aria-describedby="remove-item-description"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
         className="relative z-10 w-full max-w-xs rounded-sm border bg-card p-4 shadow-2xl outline-none"
       >
-        <h2 id="remove-item-title" className="font-serif text-base font-semibold">
-          Xoá khỏi giỏ?
+        <h2 id={titleId} className="font-serif text-base font-semibold">
+          {title}
         </h2>
         <p
-          id="remove-item-description"
-          className="mt-1.5 line-clamp-2 text-xs text-muted-foreground"
+          id={descriptionId}
+          className="mt-1.5 text-xs leading-5 text-muted-foreground"
         >
-          {item.name}
+          {description}
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <Button type="button" variant="outline" size="sm" onClick={cancel}>
@@ -602,7 +612,7 @@ function RemoveItemDialog({
             onClick={confirm}
           >
             <Trash2 className="size-3.5" />
-            Xoá
+            {confirmLabel}
           </Button>
         </div>
       </section>

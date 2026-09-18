@@ -74,8 +74,8 @@ async function searchCollections(
         ), ARRAY[]::text[]) AS "tradingLocations",
         cards.id, cards.name, cards.set_name AS "set", cards.collector_number AS number,
         cards.rarity, cards.image_url AS "imageUrl", listings.finish, listings.condition,
-        listings.quantity, listings.min_price_vnd AS "minPrice"
-      FROM listings
+        listings.quantity, listings.effective_price_vnd AS "minPrice"
+      FROM listing_prices AS listings
       JOIN users ON users.id = listings.user_id
       JOIN cards ON cards.id = listings.card_id
       WHERE listings.is_active AND listings.quantity > 0 AND cards.is_active
@@ -87,11 +87,11 @@ async function searchCollections(
           OR (${collectorNumber} <> '' AND cards.collector_number::text = ${collectorNumber})
         )
       ORDER BY users.username, cards.name, cards.set_name, cards.collector_number,
-        listings.min_price_vnd, listings.finish, listings.condition
+        listings.effective_price_vnd, listings.finish, listings.condition
       LIMIT ${pageSize} OFFSET ${offset}
     `, sql`
       SELECT count(*)::integer AS total
-      FROM listings
+      FROM listing_prices AS listings
       JOIN cards ON cards.id = listings.card_id
       WHERE listings.is_active AND listings.quantity > 0 AND cards.is_active
         AND (
@@ -158,10 +158,10 @@ export default async function SearchPage({
 
   return (
     <main className="paper-grid min-h-dvh">
-      <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-8 lg:py-7">
+      <div className="mx-auto w-full max-w-6xl px-3 py-3 sm:px-8 sm:py-5 lg:py-7">
         <SiteHeader />
 
-        <section className="py-5 sm:py-7">
+        <section className="py-4 sm:py-7">
           <form action="/search" className="relative max-w-3xl" role="search">
             <Search className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input

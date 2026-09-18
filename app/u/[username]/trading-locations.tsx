@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Check, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, MapPin, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/components/cart-provider";
@@ -326,13 +326,13 @@ export function TradingLocations({ username }: { username: string }) {
             onClick={() => setIsEditing((editing) => !editing)}
             aria-label={
               isEditing
-                ? "Hoàn tất thiết lập"
+                ? "Lưu phương thức giao dịch"
                 : "Thiết lập phương thức giao dịch"
             }
-            title={isEditing ? "Xong" : "Thiết lập"}
+            title={isEditing ? "Lưu" : "Thiết lập"}
           >
             {isEditing ? (
-              <X className="size-3" />
+              <Save className="size-3" />
             ) : (
               <Pencil className="size-3" />
             )}

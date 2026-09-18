@@ -12,7 +12,7 @@ export async function GET() {
       sellers.display_name AS "sellerDisplayName",
       sellers.facebook_url AS "sellerFacebookUrl",
       cards.name, cards.set_name AS "set", cards.collector_number AS number,
-      listings.finish, listings.condition, listings.min_price_vnd AS "unitPrice",
+      listings.finish, listings.condition, cart_items.unit_price_vnd AS "unitPrice",
       cards.image_url AS "imageUrl", listings.quantity AS stock, cart_items.quantity
     FROM carts
     JOIN cart_items ON cart_items.cart_id = carts.id
@@ -55,16 +55,36 @@ export async function PUT(request: Request) {
       INSERT INTO carts (user_id, status) VALUES (${user.id}, 'active')
       ON CONFLICT (user_id) WHERE status = 'active' DO UPDATE SET updated_at = now()
     `,
-    tx`DELETE FROM cart_items WHERE cart_id = (SELECT id FROM carts WHERE user_id = ${user.id} AND status = 'active')`,
     tx`
       INSERT INTO cart_items (cart_id, listing_id, quantity, unit_price_vnd)
-      SELECT cart.id, listings.id, LEAST(item.quantity, listings.quantity), listings.min_price_vnd
+      SELECT cart.id, listings.id, LEAST(item.quantity, listings.quantity),
+        listings.effective_price_vnd
       FROM jsonb_to_recordset(${payload}::jsonb) AS item(seller text, card_id text, finish text, condition text, quantity integer)
       JOIN users AS seller ON seller.username = item.seller
-      JOIN listings ON listings.user_id = seller.id AND listings.card_id = item.card_id
+      JOIN listing_prices AS listings ON listings.user_id = seller.id AND listings.card_id = item.card_id
         AND listings.finish = item.finish AND listings.condition = item.condition
         AND listings.is_active AND listings.quantity > 0
       CROSS JOIN LATERAL (SELECT id FROM carts WHERE user_id = ${user.id} AND status = 'active') AS cart
+      ON CONFLICT (cart_id, listing_id) DO UPDATE SET
+        quantity = EXCLUDED.quantity
+    `,
+    tx`
+      DELETE FROM cart_items AS existing
+      WHERE existing.cart_id = (
+        SELECT id FROM carts WHERE user_id = ${user.id} AND status = 'active'
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM jsonb_to_recordset(${payload}::jsonb) AS item(seller text, card_id text, finish text, condition text, quantity integer)
+        JOIN users AS seller ON seller.username = item.seller
+        JOIN listings ON listings.user_id = seller.id
+          AND listings.card_id = item.card_id
+          AND listings.finish = item.finish
+          AND listings.condition = item.condition
+        WHERE listings.id = existing.listing_id
+          AND listings.is_active
+          AND listings.quantity > 0
+      )
     `,
   ]);
   return NextResponse.json({ saved: items.length });

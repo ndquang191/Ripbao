@@ -250,9 +250,9 @@ export default function TradesPage() {
   if (loading) return <PageLoading />;
   return (
     <main className="paper-grid min-h-dvh">
-      <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-8 lg:py-7">
+      <div className="mx-auto w-full max-w-6xl px-3 py-3 sm:px-8 sm:py-5 lg:py-7">
         <SiteHeader />
-        <div className="py-5 sm:py-7">
+        <div className="py-4 sm:py-7">
           <PageTitle icon={Handshake}>Giao dịch</PageTitle>
           <p className="mt-1 text-xs text-muted-foreground">
             Yêu cầu mua và bán của bạn

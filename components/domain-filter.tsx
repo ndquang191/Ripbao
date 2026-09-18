@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from "react";
 import { ChevronDown } from "lucide-react";
+import { ResponsiveDropdownPanel } from "@/components/ui/responsive-dropdown-panel";
 import {
   announceDropdownOpen,
   DROPDOWN_OPEN_EVENT,
@@ -102,7 +103,15 @@ export function FilterDropdown({
         </span>
         <ChevronDown className="size-3 text-[#607d35] transition-transform group-open:rotate-180" />
       </summary>
-      <div className="absolute top-full left-0 z-[110] mt-1 min-w-full overflow-hidden rounded-sm border border-[#9cad82] bg-card p-1 shadow-xl ring-1 ring-[#607d35]/10">
+      <ResponsiveDropdownPanel
+        title={`Chọn ${label}`}
+        subtitle={value || `Tất cả ${label.toLocaleLowerCase("vi")}`}
+        onClose={() => detailsRef.current?.removeAttribute("open")}
+        backdropClassName="z-[105]"
+        className="z-[110] border-[#9cad82] ring-1 ring-[#607d35]/10 sm:top-full sm:left-0 sm:mt-1 sm:min-w-full sm:p-1"
+        role="dialog"
+        aria-label={`Lọc theo ${label.toLocaleLowerCase("vi")}`}
+      >
         {allowEmpty && (
           <button
             type="button"
@@ -129,7 +138,7 @@ export function FilterDropdown({
             {option}
           </button>
         ))}
-      </div>
+      </ResponsiveDropdownPanel>
     </details>
   );
 }

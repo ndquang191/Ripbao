@@ -30,14 +30,15 @@ export default function CollectionPage() {
 
   return (
     <main className="collection-editor paper-grid min-h-dvh overflow-x-hidden">
-      <div className="mx-auto max-w-[1320px] px-4 py-5 sm:px-7">
-        <SiteHeader className="pb-4" />
+      <div className="mx-auto max-w-[1320px] px-3 py-3 sm:px-7 sm:py-5">
+        <SiteHeader />
         <CollectionToolbar
           username={editor.username}
           typeCount={editor.cards.length}
           copyCount={copyCount}
           dirty={editor.dirty}
           saving={editor.saving}
+          priceLookupPending={editor.priceLookupPending}
           saveStatus={editor.saveStatus}
           pricingOpen={editor.pricingOpen}
           setPricingOpen={editor.setPricingOpen}
@@ -56,6 +57,22 @@ export default function CollectionPage() {
             className="mb-3 rounded-sm border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive"
           >
             Lưu thất bại. Các thay đổi của bạn vẫn được giữ lại.
+          </div>
+        )}
+        {editor.saveStatus === "price-warning" && (
+          <div
+            role="status"
+            className="mb-3 rounded-sm border border-[#b9853d]/40 bg-[#b9853d]/10 p-2 text-xs text-[#7a5523]"
+          >
+            Đã lưu collection nhưng chưa lấy được một số giá TCG. Giá tối thiểu sẽ được dùng trong lúc chờ đồng bộ lại.
+          </div>
+        )}
+        {editor.priceLookupWarning && (
+          <div
+            role="status"
+            className="mb-3 rounded-sm border border-[#b9853d]/40 bg-[#b9853d]/10 p-2 text-xs text-[#7a5523]"
+          >
+            Chưa lấy được giá TCG cho card vừa thêm. Giá tối thiểu sẽ được dùng tạm thời.
           </div>
         )}
         <CollectionFilters

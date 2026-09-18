@@ -23,6 +23,7 @@ supported, and a guest account can later be converted into a permanent account.
 - Neon serverless Postgres
 - Bun for dependencies and project scripts
 - Riftbound card data from [RiftCodex](https://api.riftcodex.com/)
+- Market pricing from [JustTCG](https://justtcg.com/)
 
 ## Local development
 
@@ -54,6 +55,7 @@ Create or update the database schema, then import the card catalog:
 ```bash
 bun run db:migrate
 bun run db:sync-cards
+bun run db:sync-prices
 ```
 
 Start the development server:
@@ -77,6 +79,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `bun run check` | Run type-checking, lint, and tests |
 | `bun run db:migrate` | Apply pending SQL migrations |
 | `bun run db:sync-cards` | Synchronize cards from RiftCodex |
+| `bun run db:sync-prices` | Synchronize active listing prices from JustTCG |
 
 ## Database migrations
 
@@ -106,10 +109,10 @@ scripts/      Database migration and card synchronization scripts
 
 The project is configured for Vercel and uses the Singapore region (`sin1`). Add
 `DATABASE_URL`, `NEXT_PUBLIC_SITE_URL`, and `CRON_SECRET` to the deployment
-environment, apply migrations to the production database, and synchronize the
-card catalog before serving marketplace traffic. Vercel invokes the protected
-cleanup route daily to remove expired sessions, stale rate-limit counters,
-old inactive carts, and unused guest accounts.
+environment, add `JUSTTCG_API_KEY` and `USD_TO_VND`, apply migrations, and
+synchronize the card catalog before serving marketplace traffic. Vercel invokes
+protected daily jobs to synchronize active listing prices and remove expired
+sessions, stale rate-limit counters, old inactive carts, and unused guest accounts.
 
 Keep `DATABASE_URL` server-side and never expose it through a `NEXT_PUBLIC_`
 environment variable.

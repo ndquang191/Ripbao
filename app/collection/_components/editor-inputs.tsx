@@ -5,7 +5,7 @@ import { Minus, Plus, Search, X } from "lucide-react";
 import { CardImagePreview } from "@/components/card-image-preview";
 import { FilterDropdown } from "@/components/domain-filter";
 import { Input } from "@/components/ui/input";
-import { currencyConfig } from "@/lib/currency";
+import { currencyConfig, formatCurrencyInput } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { type CardData, type Finish } from "../_lib/models";
 
@@ -44,27 +44,29 @@ export function QuantityInput({
   value,
   name,
   set,
+  min = 0,
 }: {
   value: number;
   name: string;
   set: (value: number) => void;
+  min?: number;
 }) {
   return (
     <div className="mt-1 flex w-fit items-center overflow-hidden rounded-sm border bg-background md:mt-0">
       <button
         className="grid size-6 place-items-center hover:bg-secondary disabled:opacity-30"
-        disabled={value <= 0}
-        onClick={() => set(Math.max(0, value - 1))}
+        disabled={value <= min}
+        onClick={() => set(Math.max(min, value - 1))}
         aria-label={`Giảm số lượng ${name}`}
       >
         <Minus className="size-2.5" />
       </button>
       <input
         type="number"
-        min="0"
+        min={min}
         value={value}
         onFocus={(event) => event.currentTarget.select()}
-        onChange={(event) => set(Math.max(0, event.target.valueAsNumber || 0))}
+        onChange={(event) => set(Math.max(min, event.target.valueAsNumber || 0))}
         className="h-6 w-8 border-x bg-background text-center text-[10px] font-black outline-none"
         aria-label={`Số lượng ${name}`}
       />
@@ -97,6 +99,31 @@ function useNumberInput(value: number, set: (value: number) => void) {
   return { inputValue, commit, change };
 }
 
+function useCurrencyInput(value: number, set: (value: number) => void) {
+  const [inputValue, setInputValue] = useState(() =>
+    formatCurrencyInput(value),
+  );
+  useEffect(() => setInputValue(formatCurrencyInput(value)), [value]);
+
+  const change = (next: string) => {
+    const digits = next.replace(/\D/g, "");
+    if (!digits) {
+      setInputValue("");
+      return;
+    }
+    const parsed = Number(digits);
+    setInputValue(formatCurrencyInput(parsed));
+    set(parsed);
+  };
+  const commit = () => {
+    if (inputValue) return;
+    setInputValue(formatCurrencyInput(0));
+    set(0);
+  };
+
+  return { inputValue, change, commit };
+}
+
 export function MoneyInput({
   value,
   set,
@@ -104,16 +131,16 @@ export function MoneyInput({
   value: number;
   set: (value: number) => void;
 }) {
-  const input = useNumberInput(value, set);
+  const input = useCurrencyInput(value, set);
   return (
     <div className="relative mt-1 md:mt-0">
       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">
         {currencyConfig.symbol}
       </span>
       <input
-        type="number"
-        min="0"
-        step={currencyConfig.inputStep}
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9.]*"
         value={input.inputValue}
         onChange={(event) => input.change(event.target.value)}
         onBlur={input.commit}
@@ -137,7 +164,7 @@ export function MultiplierInput({
     <input
       type="number"
       min="0"
-      step=".05"
+      step=".5"
       value={input.inputValue}
       onChange={(event) => input.change(event.target.value)}
       onBlur={input.commit}

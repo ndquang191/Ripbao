@@ -35,9 +35,17 @@ export async function GET(request: NextRequest) {
           supertype,
           rarity,
           domains,
-          image_url AS "imageUrl"
+          image_url AS "imageUrl",
+          normal_price.market_price_usd::float8 AS "nonfoilMarketPriceUsd",
+          normal_price.source_updated_at AS "nonfoilSourceUpdatedAt",
+          foil_price.market_price_usd::float8 AS "foilMarketPriceUsd",
+          foil_price.source_updated_at AS "foilSourceUpdatedAt"
         FROM cards
-        WHERE is_active
+        LEFT JOIN card_market_prices AS normal_price
+          ON normal_price.card_id = cards.id AND normal_price.finish = 'nonfoil'
+        LEFT JOIN card_market_prices AS foil_price
+          ON foil_price.card_id = cards.id AND foil_price.finish = 'foil'
+        WHERE cards.is_active
           AND (${set}::text IS NULL OR set_id = ${set} OR set_name = ${set})
           AND (${type}::text IS NULL OR type = ${type})
           AND (${rarity}::text IS NULL OR rarity = ${rarity})
@@ -80,7 +88,27 @@ export async function GET(request: NextRequest) {
     const total = count[0]?.total ?? 0;
 
     return NextResponse.json({
-      items,
+      items: items.map((item) => ({
+        ...item,
+        tcgPrices: {
+          ...(item.nonfoilMarketPriceUsd == null ? {} : {
+            nonfoil: {
+              marketPriceUsd: Number(item.nonfoilMarketPriceUsd),
+              sourceUpdatedAt: item.nonfoilSourceUpdatedAt,
+            },
+          }),
+          ...(item.foilMarketPriceUsd == null ? {} : {
+            foil: {
+              marketPriceUsd: Number(item.foilMarketPriceUsd),
+              sourceUpdatedAt: item.foilSourceUpdatedAt,
+            },
+          }),
+        },
+        nonfoilMarketPriceUsd: undefined,
+        nonfoilSourceUpdatedAt: undefined,
+        foilMarketPriceUsd: undefined,
+        foilSourceUpdatedAt: undefined,
+      })),
       total,
       page,
       size,
